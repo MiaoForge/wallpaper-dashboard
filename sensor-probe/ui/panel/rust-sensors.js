@@ -20,9 +20,12 @@ window.readRustWallpaperSnapshot = async function () {
     const windows = bySource("windows");
     const cpu = windows?.devices.find(device => device.kind === "cpu");
     const cpuMetrics = bySource("amd_ryzen_sdk")?.devices.find(device => device.kind === "cpu");
-    const gpu = ["amd_adlx", "nvidia_nvml"].flatMap(source => bySource(source)?.devices ?? [])
+    const gpu = (snapshot.gpu_paused ? [] : ["amd_adlx", "nvidia_nvml", "windows_gpu"]).flatMap(source => bySource(source)?.devices ?? [])
       .filter(device => device.kind === "gpu")
-      .sort((a, b) => (reading(b, "memory_total") ?? 0) - (reading(a, "memory_total") ?? 0))[0];
+      .sort((a, b) =>
+        ((reading(b, "memory_total") ?? 0) - (reading(a, "memory_total") ?? 0)) ||
+        Number(["usage", "main_temperature"].some(id => reading(b, id) !== undefined)) -
+        Number(["usage", "main_temperature"].some(id => reading(a, id) !== undefined)))[0];
     const memory = windows?.devices.find(device => device.kind === "memory");
     const frames = bySource("presentmon")?.devices.find(device => device.kind === "frames");
     const batteries = batterySources.map(bySource).filter(Boolean);
@@ -37,7 +40,8 @@ window.readRustWallpaperSnapshot = async function () {
       ["VCPU", cpuMetrics, "telemetry_voltage"], ["PCPUPKG", cpuMetrics, "socket_power"],
       ["SGPU1UTI", gpu, "usage"], ["SGPU1CLK", gpu, "core_clock"],
       ["VGPU1", gpu, "core_voltage"], ["PGPU1", gpu, "board_power"],
-      ["TGPU1", gpu, "core_temperature"], ["TGPU1HOT", gpu, "hotspot_temperature"],
+      ["TGPU1", gpu, "core_temperature"], ["TGPU1", gpu, "main_temperature"],
+      ["TGPU1HOT", gpu, "hotspot_temperature"],
       ["TGPU1MEM", gpu, "memory_temperature"], ["SMEMUTI", memory, "usage"],
       ["SRTSSFPS", frames, "fps"], ["SRTSSFPS1L", frames, "fps_1_percent_low"], ["SFRAMETIME", frames, "frame_time"],
     ]) put(id, reading(device, field));
@@ -63,7 +67,7 @@ window.readRustWallpaperSnapshot = async function () {
     }
     if (!Object.keys(sensors).length) throw new Error("source offline");
     return { sensors, cpuName: cpu?.name, gpuName: gpu?.name, fpsApp: frames?.name,
-      weatherCity: snapshot.weather_city, volumes,
+      weatherCity: snapshot.weather_city, gpuPaused: snapshot.gpu_paused === true, volumes,
       batteryAvailable: batteries.length > 0,
       batteries: batteries.flatMap(backend => backend.devices).filter(device => ["battery", "gamepad", "peripheral"].includes(device.kind)).map(device => ({
         name: device.name, pct: reading(device, "charge"), charging: reading(device, "external_power") === 1, connection: device.connection, type: device.kind === "gamepad" ? "gamepad" : "",

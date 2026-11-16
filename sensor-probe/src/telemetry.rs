@@ -10,7 +10,7 @@ pub enum Status {
     Unavailable,
 }
 
-#[derive(Serialize)]
+#[derive(Clone, Serialize)]
 pub struct Issue {
     pub status: Status,
     pub detail: String,

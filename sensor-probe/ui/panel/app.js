@@ -1280,6 +1280,13 @@ async function tick() {
     }
     if (CONFIG.cpuName === DEFAULT_CPU_NAME && data.cpuName) setUserName("cpu", data.cpuName.replace(/\s+\d+-Core Processor$/i, ""));
     if (CONFIG.gpuName === DEFAULT_GPU_NAME && data.gpuName) setUserName("gpu", data.gpuName);
+    const gpuName = $("gpu-name");
+    if (gpuName && data.gpuPaused) {
+      put("gpu-name", "采集已暂停");
+      gpuName.title = "游戏兼容模式";
+    } else if (gpuName?.title === "游戏兼容模式") {
+      renderNames();
+    }
     DEVICE_API.reachable = data.batteryAvailable;
     DEVICE_API.list = data.batteries;
     applyData(fromSensors(data.sensors, undefined, data.volumes));

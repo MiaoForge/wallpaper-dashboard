@@ -10,7 +10,7 @@ use std::{
 use tiny_http::{Header, Method, Request, Response, Server};
 
 use crate::{
-    amd, battery, collector_log, frames, hid_battery, msi, nvidia,
+    amd, battery, collector_log, frames, game_mode, hid_battery, msi, nvidia,
     telemetry::{Backend, Device, Issue, unix_ms},
     windows,
 };
@@ -39,9 +39,48 @@ impl Collector {
     }
 
     pub fn serve(self, stop: &AtomicBool) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+        let peripherals_disabled = std::env::args_os().any(|arg| arg == "--disable-peripherals");
+        let amd_gpu_disabled = std::env::args_os().any(|arg| arg == "--disable-amd-gpu");
+        let windows_gpu: Option<Sample> =
+            if std::env::args_os().any(|arg| arg == "--windows-gpu-temperature") {
+                if std::env::args_os().any(|arg| arg == "--amd-pmlog-memory-temperature") {
+                    if std::env::args_os().any(|arg| arg == "--amd-pmlog-board-power") {
+                        Some(crate::windows_gpu::sample_temperature_with_memory_and_power)
+                    } else {
+                        Some(crate::windows_gpu::sample_temperature_with_memory)
+                    }
+                } else {
+                    Some(crate::windows_gpu::sample_temperature)
+                }
+            } else if std::env::args_os().any(|arg| arg == "--windows-gpu-usage") {
+                Some(crate::windows_gpu::sample_usage)
+            } else {
+                None
+            };
+        let sources = WORKERS
+            .into_iter()
+            .filter(|(source, _, _)| {
+                let peripheral = matches!(
+                    *source,
+                    "windows_battery" | "bluetooth_devices" | "hid_battery"
+                );
+                !(peripherals_disabled && peripheral || amd_gpu_disabled && *source == "amd_adlx")
+            })
+            .chain(
+                windows_gpu
+                    .filter(|_| amd_gpu_disabled)
+                    .map(|sample| ("windows_gpu", 2, sample)),
+            );
+        game_mode::refresh();
+        if peripherals_disabled {
+            collector_log::record("peripherals: disabled for this run");
+        }
+        if amd_gpu_disabled {
+            collector_log::record("AMD GPU: disabled for this run");
+        }
         let samples: Snapshot = Arc::new(RwLock::new(
-            WORKERS
-                .iter()
+            sources
+                .clone()
                 .map(|(source, _, _)| {
                     Backend::new(source, Err(Issue::unavailable("waiting for first sample")))
                 })
@@ -54,9 +93,18 @@ impl Collector {
             let result = (|| {
                 workers.push(
                     thread::Builder::new()
-                        .name("recent-apps".into())
-                        .spawn_scoped(scope, || crate::recent_apps::watch(stop))?,
+                        .name("game-compatibility".into())
+                        .spawn_scoped(scope, || game_mode::watch(stop))?,
                 );
+                if std::env::args_os().any(|arg| arg == "--disable-recent-apps") {
+                    crate::collector_log::record("recent apps: disabled for this run");
+                } else {
+                    workers.push(
+                        thread::Builder::new()
+                            .name("recent-apps".into())
+                            .spawn_scoped(scope, || crate::recent_apps::watch(stop))?,
+                    );
+                }
                 let (weather_tx, weather_rx) = std::sync::mpsc::sync_channel(0);
                 workers.push(
                     thread::Builder::new()
@@ -68,7 +116,7 @@ impl Collector {
                         .name("foreground-fps".into())
                         .spawn_scoped(scope, || frames::integrated(stop))?,
                 );
-                for (index, (source, seconds, sample)) in WORKERS.into_iter().enumerate() {
+                for (index, (source, seconds, sample)) in sources.enumerate() {
                     let samples = Arc::clone(&samples);
                     workers.push(thread::Builder::new().name(source.into()).spawn_scoped(
                         scope,
@@ -87,7 +135,37 @@ impl Collector {
                                 7000
                             };
                             let mut previous_error = None;
+                            let gpu_worker = game_mode::worker_bit(source);
+                            let mut paused = false;
+                            let mut next_sample = Instant::now();
                             while !stop.load(Ordering::Acquire) {
+                                if gpu_worker != 0 {
+                                    game_mode::enter_gpu_worker(gpu_worker);
+                                    if game_mode::active() {
+                                        if !paused {
+                                            if source == "windows_gpu" {
+                                                crate::windows_gpu::release();
+                                            }
+                                            samples.write().expect("snapshot lock poisoned")
+                                                [index] = Backend::new(
+                                                source,
+                                                Err(Issue::unavailable(
+                                                    "game compatibility: GPU paused",
+                                                )),
+                                            );
+                                            paused = true;
+                                            next_sample = Instant::now();
+                                        }
+                                        game_mode::leave_gpu_worker(gpu_worker);
+                                        thread::park_timeout(Duration::from_millis(100));
+                                        continue;
+                                    }
+                                    paused = false;
+                                    if Instant::now() < next_sample {
+                                        thread::park_timeout(Duration::from_millis(100));
+                                        continue;
+                                    }
+                                }
                                 let started = Instant::now();
                                 let result = sample();
                                 let elapsed = started.elapsed();
@@ -119,12 +197,21 @@ impl Collector {
                                 );
                                 // A slow sample does not trigger catch-up polling.
                                 if !stop.load(Ordering::Acquire) {
-                                    thread::park_timeout(
-                                        interval
-                                            .saturating_sub(elapsed)
-                                            .max(Duration::from_millis(250)),
-                                    );
+                                    let delay = interval
+                                        .saturating_sub(elapsed)
+                                        .max(Duration::from_millis(250));
+                                    if gpu_worker == 0 {
+                                        thread::park_timeout(delay);
+                                    } else {
+                                        next_sample = Instant::now() + delay;
+                                    }
                                 }
+                            }
+                            if gpu_worker != 0 {
+                                if source == "windows_gpu" {
+                                    crate::windows_gpu::release();
+                                }
+                                game_mode::leave_gpu_worker(gpu_worker);
                             }
                         },
                     )?);
@@ -242,7 +329,8 @@ fn respond(
                 serde_json::to_vec(&serde_json::json!({
                     "schema_version": 1,
                     "backends": &*samples,
-                        "weather_city": weather_city,
+                    "weather_city": weather_city,
+                    "gpu_paused": game_mode::active(),
                 }))?
             };
             (body, "application/json", origin.as_deref() == Some("null"))

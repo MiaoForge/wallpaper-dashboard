@@ -14,7 +14,7 @@ use std::{
 use sensor_probe::{collector_log, service::Collector};
 use tray_icon::{
     Icon, TrayIconBuilder,
-    menu::{Menu, MenuEvent, MenuItem},
+    menu::{CheckMenuItem, Menu, MenuEvent, MenuItem},
 };
 use windows_sys::Win32::{
     System::Threading::GetCurrentThreadId,
@@ -65,9 +65,11 @@ fn run() -> Result<(), Error> {
     let menu = Menu::new();
     let panel = MenuItem::new("显示 / 隐藏桌面面板", true, None);
     let settings = MenuItem::new("设置", true, None);
+    let game_mode = CheckMenuItem::new("游戏兼容模式（暂停 GPU 采集）", true, false, None);
     let quit = MenuItem::new("退出采集器", true, None);
     menu.append(&panel)?;
     menu.append(&settings)?;
+    menu.append(&game_mode)?;
     menu.append(&quit)?;
     let _tray = TrayIconBuilder::new()
         .with_tooltip("硬件仪表盘采集器")
@@ -104,6 +106,10 @@ fn run() -> Result<(), Error> {
             for event in MenuEvent::receiver().try_iter() {
                 if event.id == *quit.id() {
                     break 'messages;
+                }
+                if event.id == *game_mode.id() {
+                    sensor_probe::game_mode::set_manual(game_mode.is_checked());
+                    continue;
                 }
                 let open = if event.id == *panel.id() {
                     sensor_probe::shortcuts::open_panel

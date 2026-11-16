@@ -1,8 +1,10 @@
 pub mod amd;
+mod amd_pmlog;
 pub mod battery;
 pub mod collector_log;
 pub mod fans;
 pub mod frames;
+pub mod game_mode;
 pub mod hid_battery;
 pub mod msi;
 pub mod nvidia;
@@ -15,3 +17,4 @@ pub mod shortcuts;
 pub mod telemetry;
 mod weather_location;
 pub mod windows;
+mod windows_gpu;

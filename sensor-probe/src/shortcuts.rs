@@ -751,7 +751,15 @@ pub fn launch(shortcut: &Shortcut) -> io::Result<()> {
     }
     // Delegate to the existing Explorer desktop. The selected path travels as data,
     // and launched apps use the desktop user's token even if the collector is elevated.
-    open_in_explorer(&shortcut.target, "")
+    let launch = || open_in_explorer(&shortcut.target, "");
+    let name = shortcut.name.trim();
+    let league = name.eq_ignore_ascii_case("League of Legends")
+        || matches!(name, "英雄联盟" | "英雄联盟WeGame版" | "英雄联盟 WeGame版");
+    if shortcut.source == "Windows" && league {
+        crate::game_mode::launch_league(launch)
+    } else {
+        launch()
+    }
 }
 
 pub fn open_settings() -> io::Result<()> {
