@@ -1,0 +1,83 @@
+:root {
+  color-scheme: dark;
+  font-family: Inter, "Microsoft YaHei UI", system-ui, sans-serif;
+  color: #f2f4ff;
+  background: #080a17;
+  --muted: #b3b9d0;
+  --line: #e0e5ff25;
+  --cpu: #8cecff;
+  --gpu: #b6a3ff;
+  --ram: #ffd998;
+  --panel: linear-gradient(145deg, #a8b4f128, #111529bb 65%, #0b1020ad);
+}
+* { box-sizing: border-box; }
+body { margin: 0; min-height: 100vh; }
+.backdrop { position: fixed; inset: 0; z-index: -1; background: radial-gradient(ellipse at 76% 23%, #7d6db166, transparent 43%), radial-gradient(ellipse at 27% 58%, #486fa16e, transparent 48%), linear-gradient(160deg, #080919 7%, #1c2340 53%, #090914 90%); }
+.backdrop img { position: absolute; width: 100%; height: 100%; object-fit: cover; }
+.backdrop::after { content: ""; position: absolute; inset: 0; background: linear-gradient(#05071026, #05071046 65%, #050710a0); }
+main {
+  width: min(100%, 1440px); min-height: 100dvh; margin: auto;
+  padding: clamp(15px, 3.1vw, 54px);
+  display: grid; align-content: center; gap: clamp(12px, 2.4vw, 37px);
+}
+h1, h2, p, dl { margin: 0; }
+h1 { font-size: clamp(19px, 3vw, 43px); letter-spacing: -.045em; }
+h2 { font-size: clamp(15px, 2.3vw, 32px); font-weight: 650; }
+.panel { min-width: 0; border: 1px solid var(--line); border-radius: clamp(18px, 3.8vw, 56px); padding: clamp(13px, 2.65vw, 39px); background: var(--panel); box-shadow: inset 0 1px 0 #eef1ff24, 0 10px 36px #05071446; backdrop-filter: blur(12px); }
+.masthead, .summary, .monitor, .lower { display: grid; gap: inherit; }
+.masthead { grid-template-columns: 1fr 1.65fr; }
+.clock-card, .connection { display: flex; flex-direction: column; justify-content: center; gap: 8px; }
+.clock { font-size: clamp(34px, 7vw, 102px); font-weight: 560; font-variant-numeric: tabular-nums; letter-spacing: -.07em; line-height: 1; }
+#date, .muted, .device, .connection { color: var(--muted); }
+#date { font-size: clamp(12px, 1.8vw, 25px); }
+.connection { align-items: flex-start; }
+#connection::before { content: ""; display: inline-block; margin-right: .65em; width: .55em; height: .55em; border-radius: 50%; background: #ff9e82; }
+#connection.live::before { background: #85eec9; box-shadow: 0 0 10px #85eec980; }
+button, select, input { color: inherit; font: inherit; background: #1c2038; border: 1px solid #bac5f252; border-radius: 10px; padding: 7px 11px; }
+button { cursor: pointer; }
+button:hover, button:focus-visible { border-color: var(--cpu); }
+.summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.hardware { --accent: var(--cpu); }
+.hardware:last-child { --accent: var(--gpu); }
+.device { margin-top: 6px; min-height: 2em; overflow-wrap: anywhere; }
+.gauge { display: grid; place-content: center; justify-items: center; position: relative; isolation: isolate; width: min(65%, 240px); min-width: 84px; aspect-ratio: 1; margin: clamp(10px, 2.2vw, 30px) auto; border-radius: 50%; }
+.gauge::before { content: ""; position: absolute; inset: 0; background: conic-gradient(var(--accent) var(--fill, 0%), #cbd1f32b 0); border-radius: inherit; mask: radial-gradient(farthest-side, transparent calc(100% - clamp(5px, .8vw, 13px)), #000 calc(100% - clamp(4px, .7vw, 12px))); z-index: -1; }
+.primary { font-size: clamp(23px, 4.6vw, 67px); font-variant-numeric: tabular-nums; letter-spacing: -.055em; }
+.gauge .muted { font-size: clamp(10px, 1.2vw, 18px); }
+.monitor { grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr); }
+.lower { grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); }
+dl { margin-top: 12px; }
+dl div { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 3px 8px; padding: clamp(5px, 1vw, 14px) 0; border-top: 1px solid var(--line); }
+dt { color: var(--muted); min-width: 0; overflow-wrap: anywhere; }
+dd { margin: 0; font-variant-numeric: tabular-nums; white-space: nowrap; }
+#fans div { display: grid; grid-template-columns: minmax(0, 1fr) auto; }
+#fans meter, #storage meter { grid-column: 1 / -1; flex-basis: 100%; width: 100%; height: 6px; accent-color: var(--gpu); }
+meter::-webkit-meter-bar { background: #bfc9f135; border: 0; border-radius: 4px; }
+meter::-webkit-meter-optimum-value { background: #a7b8f5; border-radius: 4px; }
+.activity canvas { display: block; width: 100%; height: clamp(110px, 25vw, 440px); }
+.legend { display: flex; flex-wrap: wrap; gap: 8px 16px; margin: 11px 0; }
+.cpu-color { color: var(--cpu); } .gpu-color { color: var(--gpu); } .ram-color { color: var(--ram); }
+#temperatures { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+#temperatures div { display: flex; flex-direction: column-reverse; justify-content: center; align-items: center; gap: 8px; padding: clamp(8px, 3vw, 42px) 5px; text-align: center; border: 1px solid var(--line); border-radius: clamp(10px, 2vw, 28px); background: #cdd3ff0a; }
+#temperatures dd { font-size: clamp(13px, 3vw, 44px); }
+#temperatures dt { font-size: clamp(10px, 1.3vw, 18px); }
+.sources { padding-top: 12px; padding-bottom: 12px; }
+.sources ul { padding: 0; margin: 0; display: flex; gap: 6px 17px; flex-wrap: wrap; list-style: none; color: var(--muted); font-size: clamp(10px, 1.5vw, 19px); }
+dialog { border-radius: 18px; border: 1px solid var(--line); background: #171b31; color: inherit; width: min(92vw, 550px); padding: 22px; max-height: 90vh; }
+dialog::backdrop { background: #030512a0; }
+dialog header { display: flex; justify-content: space-between; align-items: center; }
+dialog label { display: block; margin: 12px 0 6px; color: var(--muted); }
+dialog select, dialog input { width: 100%; }
+fieldset { margin: 15px 0 0; border: 1px solid var(--line); border-radius: 8px; }
+.sample-notice { color: #ffda9e; margin-top: 8px; font-size: .85rem; }
+.sample-notice:empty { display: none; }
+@media (min-width: 780px) and (max-aspect-ratio: 3/4) {
+  main { grid-template-rows: .74fr 1.25fr 1.36fr .92fr auto; }
+  .activity { display: flex; flex-direction: column; }
+  .activity canvas { flex: 1; }
+}
+@media (max-width: 560px) {
+  main { align-content: start; }
+  .monitor, .lower { grid-template-columns: 1fr; }
+  dl { font-size: .85rem; }
+}

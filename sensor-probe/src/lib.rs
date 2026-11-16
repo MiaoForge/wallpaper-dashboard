@@ -1,0 +1,17 @@
+pub mod amd;
+pub mod battery;
+pub mod collector_log;
+pub mod fans;
+pub mod frames;
+pub mod hid_battery;
+pub mod msi;
+pub mod nvidia;
+mod panel_assets;
+mod recent_apps;
+pub mod service;
+mod settings;
+mod shortcut_http;
+pub mod shortcuts;
+pub mod telemetry;
+mod weather_location;
+pub mod windows;

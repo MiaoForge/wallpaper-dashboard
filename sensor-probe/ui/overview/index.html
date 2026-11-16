@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>硬件仪表盘</title>
+  <link rel="stylesheet" href="dashboard.css">
+  <script src="dashboard.js" defer></script>
+</head>
+<body><div class="backdrop" aria-hidden="true"><img id="background" alt="" hidden></div>
+  <main>
+    <header class="masthead">
+      <div class="panel clock-card"><div class="clock" id="clock"></div><p id="date"></p></div>
+      <div class="panel connection"><h1>硬件仪表盘</h1><span id="connection" role="status">连接采集服务…</span><button id="settings" type="button">设备设置</button></div>
+    </header>
+    <section class="summary" aria-label="CPU 和 GPU">
+      <article class="panel hardware">
+        <h2>CPU</h2><p class="device" id="cpu-name">—</p>
+        <div class="gauge" id="cpu-gauge"><strong class="primary" id="cpu-use">—</strong><span class="muted">使用率</span></div>
+        <dl id="cpu-metrics"></dl><p id="cpu-notice" class="sample-notice"></p>
+      </article>
+      <article class="panel hardware">
+        <h2>GPU</h2><p class="device" id="gpu-name">—</p>
+        <div class="gauge" id="gpu-gauge"><strong class="primary" id="gpu-use">—</strong><span class="muted">使用率</span></div>
+        <dl id="gpu-metrics"></dl>
+      </article>
+    </section>
+    <div class="monitor">
+      <section class="panel activity">
+        <h2>使用率趋势</h2>
+        <div class="legend"><span class="cpu-color">CPU</span><span class="gpu-color">GPU</span><span class="ram-color">内存</span></div>
+        <canvas id="history" aria-label="CPU、GPU 和内存使用率趋势" role="img"></canvas>
+      </section>
+      <section class="panel"><h2>主板风扇</h2><dl id="fans"></dl><p id="fan-notice" class="sample-notice"></p></section>
+    </div>
+    <div class="lower">
+      <section class="panel"><h2>内存与存储</h2><dl id="storage"></dl></section>
+      <section class="panel"><h2>硬件温度</h2><dl id="temperatures"></dl></section>
+    </div>
+    <section class="panel sources" aria-label="数据源"><ul id="sources"></ul></section>
+    <dialog id="device-settings">
+      <form method="dialog">
+        <header><h2>设备设置</h2><button type="submit">完成</button></header>
+        <label for="gpu-select">显示显卡</label><select id="gpu-select"></select>
+        <label for="background-file">预览背景图</label><input id="background-file" type="file" accept="image/*"><fieldset><legend>风扇名称</legend><div id="fan-names"></div></fieldset>
+      </form>
+    </dialog>
+  </main>
+</body>
+</html>

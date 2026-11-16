@@ -1,0 +1,361 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>硬件仪表盘</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<svg class="svg-defs" aria-hidden="true">
+  <symbol id="i-cpu" viewBox="0 0 24 24"><path d="M7 5h10a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2ZM9 2v3m6-3v3M9 19v3m6-3v3M2 9h3m-3 6h3m14-6h3m-3 6h3M9 9h6v6H9z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-gpu" viewBox="0 0 24 24"><path d="M4 5h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Zm4 4a3 3 0 1 0 0 6 3 3 0 0 0 0-6Zm8 0a3 3 0 1 0 0 6 3 3 0 0 0 0-6Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-temp" viewBox="6 0 12 24"><path d="M10 14V5a2 2 0 0 1 4 0v9a4 4 0 1 1-4 0Zm2-3v6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-pulse" viewBox="6 0 12 24"><path d="M7 12h2l2-5 2 10 2-5h2" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-bolt" viewBox="6 0 12 24"><path d="m13 3-5 10h4l-1 8 5-11h-4z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-gauge" viewBox="6 0 12 24"><path d="M7 16a5 5 0 1 1 10 0H7Zm5-2 2-3" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-mouse" viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 0-7 7v6a7 7 0 1 0 14 0V9a7 7 0 0 0-7-7Zm0 0v8m-7 0h14" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-headset" viewBox="0 0 24 24"><path d="M4 14v-3a8 8 0 1 1 16 0v3M4 12h3a1 1 0 0 1 1 1v5H5a1 1 0 0 1-1-1Zm16 0h-3a1 1 0 0 0-1 1v5h3a1 1 0 0 0 1-1Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-gamepad" viewBox="0 0 24 24"><path d="M7 6h10c3 0 5 4 5 8 0 3-1 4-3 3l-3-3H8l-3 3c-2 1-3 0-3-3 0-4 2-8 5-8Zm1 3v4m-2-2h4m6-1h.1m2 2h.1" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-bluetooth" viewBox="0 0 24 24"><path d="M7 7l10 10-5 5V2l5 5L7 17" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-usb-receiver" viewBox="0 0 24 24"><path d="M9 10V4h6v6m-8 0h10v10H7zM10 7h4m-3 10h2" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-usb-interface" viewBox="0 0 24 24"><path d="M8 3v5m8-5v5M6 8h12v3a6 6 0 0 1-12 0V8Zm6 9v4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-keyboard" viewBox="0 0 24 24"><path d="M3 6h18v12H3zM6 9h1m3 0h1m3 0h1m3 0h1M6 12h1m3 0h1m3 0h1m3 0h1M8 15h8" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-phone" viewBox="0 0 24 24"><path d="M7 3h10a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Zm4 15h2" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-buds" viewBox="0 0 24 24"><path d="M6 12a4 4 0 1 1 4-4v8a2 2 0 1 1-4 0Zm12 0a4 4 0 1 0-4-4v8a2 2 0 1 0 4 0Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-device" viewBox="0 0 24 24"><path d="M6 4h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Zm3 8h6m-3-3v6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-pin" viewBox="0 0 24 28"><path d="M12 24s7-8 7-14A7 7 0 0 0 5 10c0 6 7 14 7 14Zm0-17a3 3 0 1 0 0 6 3 3 0 0 0 0-6Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-leaf" viewBox="0 0 24 24"><path d="M5 19c0-9 4-14 15-14 0 12-4 16-11 14m-4 2 9-9" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-drop" viewBox="0 0 24 24"><path d="M12 3s-6 7-6 11a6 6 0 0 0 12 0c0-4-6-11-6-11Zm-2 12a2 2 0 0 0 2 2" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-wind" viewBox="0 0 24 24"><path d="M3 8h11a2 2 0 1 0-2-2m-8 6h15a2 2 0 1 1-2 2M4 16h7a2 2 0 1 1-2 2" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24"><path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8ZM12 2v3m0 14v3M2 12h3m14 0h3M5 5l2 2m10 10 2 2M5 19l2-2M17 7l2-2" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-disk" viewBox="0 0 40 28"><path d="M7 19 11 7h18l4 12v3H7zm0-3h26m-20 3h2m3 0h2" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+  <symbol id="i-fan" viewBox="0 0 40 40"><path d="M20 16c-2-8 2-12 7-10 4 2 3 8-1 12m-2 2c8-2 12 2 10 7-2 4-8 3-12-1m-2-2c2 8-2 12-7 10-4-2-3-8 1-12m2-2C8 22 4 18 6 13c2-4 8-3 12 1m2 2a4 4 0 1 0 0 8 4 4 0 0 0 0-8Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+</svg>
+
+<div id="stage">
+
+  <main id="overlay">
+
+    <!-- ============ 时间 ============ -->
+    <section class="card card-a">
+      <div class="clock" id="clock">08:24</div>
+      <div class="date" id="date">十月29日 星期四</div>
+      <div class="loc">
+        <svg class="ic-pin" viewBox="0 0 24 24"><use href="#i-pin"/></svg>
+        <span id="wloc">--</span>
+      </div>
+      <div class="wnow">
+        <img class="ic-cloud" id="wicon" alt="" hidden>
+        <span class="wtemp"><span id="wtemp">--</span><em>°</em>C</span>
+      </div>
+      <div class="wrange"><span id="wmin">--</span>°/<i></i><span id="wmax">--</span>°</div>
+      <div class="whaze" id="whaze">--</div>
+    </section>
+
+    <!-- ============ 天气 ============ -->
+    <section class="card card-b">
+      <div class="wtitle"><b>WEATHER</b><i>FORECAST</i></div>
+      <div class="wslogan"><span class="good" id="wslogan">good day</span><span class="evo" id="wuser">EVO</span></div>
+      <div class="wline1">今日体感温度 <b><span id="wfeels">--</span>°C</b><span class="gap"></span>空气湿度 <b><span id="whum">--</span>%</b></div>
+      <div class="wline2">最大风速 <b><span id="wwindmax">--</span><span class="u">m/s</span></b><span class="gap"></span>Sunrise <b class="am" id="wsunrise">--</b><span class="gap"></span>Sunset <b class="pm" id="wsunset">--</b></div>
+
+      <div class="wstrip">
+        <div class="wcell">
+          <div class="whead"><svg class="wico leaf" viewBox="0 0 24 24"><use href="#i-leaf"/></svg><span>空气质量</span></div>
+          <div class="wval"><b class="orange" id="waqi">--</b><i>(US)</i><span class="pill green" id="waqi-pill">--</span></div>
+        </div>
+        <div class="wcell">
+          <div class="whead"><svg class="wico drop" viewBox="0 0 24 24"><use href="#i-drop"/></svg><span>降雨</span></div>
+          <div class="wval"><b id="wrain">--</b><i>%</i></div>
+        </div>
+        <div class="wcell">
+          <div class="whead"><svg class="wico wind" viewBox="0 0 24 24"><use href="#i-wind"/></svg><span>风速</span></div>
+          <div class="wval"><b id="wwind">--</b><i>m/s</i></div>
+        </div>
+        <div class="wcell">
+          <div class="whead"><svg class="wico sun" viewBox="0 0 24 24"><use href="#i-sun"/></svg><span>紫外线</span></div>
+          <div class="wval"><span class="pill purple" id="wuv-pill">--</span></div>
+        </div>
+      </div>
+
+      <span class="weather-credit">Open-Meteo · CAMS</span>
+      <div class="orb" id="orb">
+        <svg viewBox="0 0 100 100">
+          <defs>
+            <radialGradient id="gHaloSun" cx="50%" cy="50%" r="50%">
+              <stop offset="52%" stop-color="#ffcf6a" stop-opacity=".46"/>
+              <stop offset="78%" stop-color="#ffb84d" stop-opacity=".16"/>
+              <stop offset="100%" stop-color="#ffb84d" stop-opacity="0"/>
+            </radialGradient>
+            <radialGradient id="gHaloMoon" cx="50%" cy="50%" r="50%">
+              <stop offset="56%" stop-color="#bcd4ff" stop-opacity=".15"/>
+              <stop offset="100%" stop-color="#bcd4ff" stop-opacity="0"/>
+            </radialGradient>
+            <radialGradient id="panelSun" cx="35%" cy="32%">
+              <stop stop-color="#fff8c7"/><stop offset="1" stop-color="#e9a54b"/>
+            </radialGradient>
+            <radialGradient id="panelMoon" cx="38%" cy="35%">
+              <stop stop-color="#e0e9fa"/><stop offset="1" stop-color="#8998b1"/>
+            </radialGradient>
+            <mask id="moonMask" maskUnits="userSpaceOnUse" x="0" y="0" width="100" height="100">
+              <path id="moon-lit-mask" d="" fill="#ffffff"/>
+            </mask>
+            <!-- 暗面遮罩：白底挖掉亮面，只留暗面区域，用来盖一层半透明黑 -->
+            <mask id="moonDarkMask" maskUnits="userSpaceOnUse" x="0" y="0" width="100" height="100">
+              <rect x="0" y="0" width="100" height="100" fill="#ffffff"/>
+              <path id="moon-dark-hole" d="" fill="#000000"/>
+            </mask>
+          </defs>
+          <circle class="orb-halo" cx="50" cy="50" r="54" fill="url(#gHaloSun)"/>
+          <g class="orb-sun">
+            <circle cx="50" cy="50" r="42" fill="url(#panelSun)"/>
+          </g>
+          <g class="orb-moon" style="display:none">
+            <circle cx="50" cy="50" r="42" fill="#1e242d"/>
+            <!-- 完整月面：暗面也能看到纹理，只是被下面那层压暗 -->
+            <circle cx="50" cy="50" r="42" fill="url(#panelMoon)"/>
+            <!-- 暗面压暗：只在亮面之外的区域盖一层半透明黑 -->
+            <circle cx="50" cy="50" r="42" fill="#000000" fill-opacity="0.5" mask="url(#moonDarkMask)"/>
+            <circle cx="50" cy="50" r="42" fill="none" stroke="#ffffff" stroke-opacity=".12" stroke-width="3"/>
+          </g>
+        </svg>
+      </div>
+    </section>
+
+    <!-- ============ CPU / GPU ============ -->
+    <section class="card card-c">
+      <div class="half half-cpu">
+        <div class="head">
+          <div class="chip-box"><svg class="ic-chip" viewBox="0 0 24 24"><use href="#i-cpu"/></svg></div>
+          <div class="head-txt"><h1>CPU</h1><p id="cpu-name">AMD Ryzen7<br>9800X3D</p></div>
+        </div>
+        <div class="ring">
+          <svg viewBox="0 0 200 200">
+            <circle class="ring-track" cx="100" cy="100" r="90"/>
+            <circle class="ring-value" id="cpu-ring" cx="100" cy="100" r="90"/>
+          </svg>
+          <div class="ring-txt"><b id="cpu-load">--</b><i>%</i></div>
+        </div>
+        <div class="stats">
+          <div class="stat"><svg class="ic" viewBox="6 0 12 24"><use href="#i-temp" x="6" width="12" height="24"/></svg><b id="cpu-temp">--</b><i>°C</i></div>
+          <div class="stat"><svg class="ic ic-lg" viewBox="6 0 12 24"><use href="#i-pulse" x="6" width="12" height="24"/></svg><b id="cpu-clock">--</b><i>GHz</i></div>
+          <div class="stat"><svg class="ic" viewBox="6 0 12 24"><use href="#i-bolt" x="6" width="12" height="24"/></svg><b id="cpu-volt">--</b><i>V</i></div>
+          <div class="stat"><svg class="ic ic-lg" viewBox="6 0 12 24"><use href="#i-gauge" x="6" width="12" height="24"/></svg><b id="cpu-power">--</b><i>W</i></div>
+        </div>
+      </div>
+
+      <div class="cg-divider"></div>
+
+      <div class="half half-gpu">
+        <div class="head">
+          <div class="chip-box"><svg class="ic-chip" viewBox="0 0 24 24"><use href="#i-gpu"/></svg></div>
+          <div class="head-txt"><h1>GPU</h1><p id="gpu-name">NVIDIA GeForce<br>RTX 5080</p></div>
+        </div>
+        <div class="ring">
+          <svg viewBox="0 0 200 200">
+            <circle class="ring-track" cx="100" cy="100" r="90"/>
+            <circle class="ring-value" id="gpu-ring" cx="100" cy="100" r="90"/>
+          </svg>
+          <div class="ring-txt"><b id="gpu-load">--</b><i>%</i></div>
+        </div>
+        <div class="stats">
+          <div class="stat"><svg class="ic" viewBox="6 0 12 24"><use href="#i-temp" x="6" width="12" height="24"/></svg><b id="gpu-temp">--</b><i>°C</i></div>
+          <div class="stat"><svg class="ic ic-lg" viewBox="6 0 12 24"><use href="#i-pulse" x="6" width="12" height="24"/></svg><b id="gpu-clock">--</b><i>GHz</i></div>
+          <div class="stat"><svg class="ic" viewBox="6 0 12 24"><use href="#i-bolt" x="6" width="12" height="24"/></svg><b id="gpu-volt">--</b><i>V</i></div>
+          <div class="stat"><svg class="ic ic-lg" viewBox="6 0 12 24"><use href="#i-gauge" x="6" width="12" height="24"/></svg><b id="gpu-power">--</b><i>W</i></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 设备电量 ============ -->
+    <section class="card card-d">
+      <h2 class="title">设备 &amp; 电量</h2>
+      <span class="dev-src" id="dev-src"></span>
+
+      <!-- 样式一：列表 -->
+      <div class="dev-list" id="device-list"></div>
+      <div class="dev-scroll-controls" id="device-scroll-controls" hidden>
+        <button type="button" aria-label="上一组设备" title="上一组设备">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 15 6-6 6 6"/></svg>
+        </button>
+        <button type="button" aria-label="下一组设备" title="下一组设备">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+        </button>
+      </div>
+
+      <!-- 样式二：圆环（只显示第一台设备） -->
+      <div class="dev-ring" id="dev-ring">
+        <div class="dr-type" id="dr-type">通用设备</div>
+        <div class="dr-name" id="dr-name">--</div>
+        <div class="dr-pct" id="dr-pct">--</div>
+        <div class="dr-status" id="dr-status">
+          <img class="dr-bolt" id="dr-bolt" src="icons/bolt.svg" alt="">
+          <span id="dr-status-text">在线</span>
+        </div>
+        <div class="dr-time" id="dr-time">电量更新时间：无</div>
+
+        <div class="dr-ring" id="dr-ring-box">
+          <!-- iOS 式进度环：底层固定轨道 + 上层按电量走的弧 -->
+          <svg class="dr-ring-svg" viewBox="0 0 227 227" aria-hidden="true">
+            <circle class="dr-ring-track" cx="113.5" cy="113.5" r="104.7"></circle>
+            <circle class="dr-ring-bar" id="dr-ring-bar" cx="113.5" cy="113.5" r="104.7"></circle>
+          </svg>
+          <svg class="dr-ico" id="dr-ico" viewBox="0 0 24 24">
+            <use id="dr-ico-use" href="#i-device"></use>
+          </svg>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 性能监控 ============ -->
+    <section class="card card-e">
+      <h2 class="title">性能监控</h2>
+      <div class="meta meta-aida">
+        <span class="m1">FPS<b id="fps">--</b></span>
+        <span class="m2" id="resolution">--</span>
+        <span class="m3">|</span>
+        <span class="m4" id="refresh">--</span>
+        <span class="m5"><b id="netval">--</b><i>MB/s</i></span>
+      </div>
+      <div class="meta meta-hw">
+        <span class="m1">FPS<b id="fps-hw">--</b></span>
+        <span class="m1l"><b id="fps1l-hw">--</b><em>（1% L）</em></span>
+        <span class="m3">|</span>
+        <span class="mft"><b id="ft-hw">--</b><i>ms</i></span>
+        <span class="m5"><b id="netval-hw">--</b><i>MB/s</i></span>
+      </div>
+      <div class="plot"><canvas id="chart"></canvas></div>
+      <div class="legend">
+        <span><i style="--c:#488ff5"></i>FPS</span>
+        <span><i style="--c:#3dffa2"></i>CPU</span>
+        <span><i style="--c:#9D7DFB"></i>GPU</span>
+        <span><i style="--c:#FFFE91"></i>MEM</span>
+      </div>
+    </section>
+
+    <!-- ============ 风扇状态 ============ -->
+    <section class="card card-f">
+      <h2 class="title">风扇状态</h2>
+      <div class="fan-list">
+        <div class="fan-row" hidden>
+          <div class="fan-ico"><svg viewBox="0 0 40 40"><use href="#i-fan"/></svg><img class="fan-img" alt=""></div>
+          <div class="fan-body">
+            <div class="fan-top"><span id="fan-name-1">FCPU</span><b><em id="fan-cpu">--</em></b><u>RPM</u></div>
+            <div class="bar"><i id="fan-cpu-bar"></i></div>
+          </div>
+        </div>
+        <div class="fan-row" hidden>
+          <div class="fan-ico"><svg viewBox="0 0 40 40"><use href="#i-fan"/></svg><img class="fan-img" alt=""></div>
+          <div class="fan-body">
+            <div class="fan-top"><span id="fan-name-2">FAIOPUMP</span><b><em id="fan-aio">--</em></b><u>RPM</u></div>
+            <div class="bar"><i id="fan-aio-bar"></i></div>
+          </div>
+        </div>
+        <div class="fan-row" hidden>
+          <div class="fan-ico"><svg viewBox="0 0 40 40"><use href="#i-fan"/></svg><img class="fan-img" alt=""></div>
+          <div class="fan-body">
+            <div class="fan-top"><span id="fan-name-3"></span><b><em id="fan-opt">--</em></b><u>RPM</u></div>
+            <div class="bar"><i id="fan-opt-bar"></i></div>
+          </div>
+        </div>
+        <div class="fan-row" hidden>
+          <div class="fan-ico"><svg viewBox="0 0 40 40"><use href="#i-fan"/></svg><img class="fan-img" alt=""></div>
+          <div class="fan-body">
+            <div class="fan-top"><span id="fan-name-4"></span><b><em id="fan-1">--</em></b><u>RPM</u></div>
+            <div class="bar"><i id="fan-1-bar"></i></div>
+          </div>
+        </div>
+        <div class="fan-row" hidden>
+          <div class="fan-ico"><svg viewBox="0 0 40 40"><use href="#i-fan"/></svg><img class="fan-img" alt=""></div>
+          <div class="fan-body">
+            <div class="fan-top"><span id="fan-name-5"></span><b><em id="fan-2">--</em></b><u>RPM</u></div>
+            <div class="bar"><i id="fan-2-bar"></i></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 存储 ============ -->
+    <section class="card card-g">
+      <h2 class="title">存储</h2>
+      <div class="store-list" id="store-list"></div>
+      <template id="store-row-template">
+        <div class="store-row">
+          <svg class="disk-ico" viewBox="0 0 40 32"><use href="#i-disk"/></svg>
+          <div class="store-body">
+            <div class="store-line"><span></span><b></b></div>
+            <div class="store-size"></div>
+            <div class="bar"><i></i></div>
+          </div>
+        </div>
+      </template>
+    </section>
+
+    <!-- ============ 温度 ============ -->
+    <section class="card card-h">
+      <div class="pkg">
+        <svg class="arc" viewBox="0 0 300 300">
+          <circle class="arc-track" cx="150" cy="150" r="122"/>
+          <circle class="arc-value" id="pkg-arc" cx="150" cy="150" r="122"/>
+        </svg>
+        <div class="pkg-txt">
+          <div class="pkg-num"><b id="pkg-temp">--</b><i>°C</i></div>
+          <div class="pkg-cap" id="pkg-cap">CPU Package</div>
+        </div>
+        <div class="pkg-range"><span>30</span><span>90</span></div>
+      </div>
+      <div class="mini mini-1">
+        <div class="mini-num"><b><em id="gpu-hot">--</em><i>°C</i></b></div>
+        <div class="mini-cap">GPU Coretemp</div>
+      </div>
+      <div class="mini mini-2">
+        <div class="mini-num"><b><em id="gpu-mem">--</em><i>°C</i></b></div>
+        <div class="mini-cap" id="gpu-mem-cap">GPU Memory</div>
+      </div>
+    </section>
+
+
+    <!-- ============ 横屏：WiFi / 音量 / 电量 组件 ============ -->
+    <div class="wifi-panel">
+      <svg class="wifi-svg" viewBox="0 0 120 120">
+        <!-- 音量弧：220°，从 200° 经顶部到 340°，两端垂在下方 -->
+        <path class="vol-track" d="M 13.2 87 A 54 54 0 1 1 106.8 87"/>
+        <path class="vol-fill" id="vol-arc" d="M 13.2 87 A 54 54 0 1 1 106.8 87"/>
+
+        <!-- 电量 4 点：补全圆的下半部 -->
+        <circle class="bat-dot" data-i="0" cx="30.6" cy="105.3" r="6"/>
+        <circle class="bat-dot" data-i="1" cx="49.7" cy="113.0" r="6"/>
+        <circle class="bat-dot" data-i="2" cx="70.3" cy="113.0" r="6"/>
+        <circle class="bat-dot" data-i="3" cx="89.4" cy="105.3" r="6"/>
+
+        <!-- WiFi：圆心居中，2 段弧 + 底点（放大到和参考图一致） -->
+        <g class="wifi-sig" transform="translate(31 42)">
+          <circle class="sig-dot" data-i="0" cx="29" cy="34" r="4.6"/>
+          <path class="sig-bar" data-i="1" d="M 12 23 A 24 24 0 0 1 46 23"/>
+          <path class="sig-bar" data-i="2" d="M 2 13 A 38 38 0 0 1 56 13"/>
+        </g>
+      </svg>
+    </div>
+
+
+    <!-- ============ 竖屏：APP dock（上）+ 游戏 dock（下） ============ -->
+    <div id="desktop-app-frame" class="desktop-dock-frame" aria-hidden="true"></div>
+    <div id="desktop-game-frame" class="desktop-dock-frame" aria-hidden="true"></div>
+    <div class="dock-app" id="dockApp" hidden></div>
+    <div class="dock-title" id="dockTitle" hidden>游戏 &amp; 快捷启动</div>
+    <div class="dock-game" id="dockGame" hidden></div>
+    <div class="dock" id="dock" hidden></div>
+    <!-- ============ 横屏：音乐播放器 ============ -->
+
+  </main>
+
+  <div id="status"><i></i><span id="status-text">Rust 采集器未连接</span></div>
+</div>
+
+<script src="shortcut-dock.js"></script>
+<script src="rust-sensors.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

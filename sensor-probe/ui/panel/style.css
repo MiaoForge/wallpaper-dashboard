@@ -1,0 +1,1220 @@
+:root {
+  --ink: #ffffff;
+  --soft: #e6e9ee;
+  --muted: #b9bec9;
+  --dim: #8f96a3;
+  --cyan: #8afdff;
+  --blue: #4e8aff;
+  --num: "Segoe UI", "Microsoft YaHei UI", sans-serif;
+  --ttl: "Segoe UI", "Microsoft YaHei UI", sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: transparent;
+  color: var(--ink);
+  font-family: var(--num);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: geometricPrecision;
+  user-select: none;
+  cursor: auto;
+}
+
+body { position: relative; }
+
+.svg-defs { position: absolute; width: 0; height: 0; overflow: hidden; }
+
+#stage {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 1440px;
+  height: 2560px;
+  overflow: hidden;
+  transform-origin: top left;
+  background: transparent;
+}
+
+#overlay { position: absolute; inset: 0; }
+
+.card { position: absolute; }
+
+/* 所有文本都用 line-height:1 绝对定位，top 已按字形上沿校准 */
+.card > *, .card div, .card span, .card b, .card p, .card h1, .card h2 {
+  margin: 0;
+  font-weight: 400;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.title {
+  position: absolute;
+  font-family: var(--ttl);
+  font-weight: 600;
+  letter-spacing: 1.9px;
+  color: #f2f4f7;
+}
+
+/* ---------------- 卡片坐标 ---------------- */
+.card-a { left: 40px;  top: 60px;   width: 366px; height: 370px; }
+.card-b { left: 460px; top: 60px;   width: 940px; height: 370px; }
+.card-c { left: 40px;  top: 502px;  width: 655px; height: 473px; }
+.card-d { left: 754px; top: 502px;  width: 646px; height: 473px; }
+.card-e { left: 40px;  top: 1047px; width: 904px; height: 448px; }
+.card-f { left: 974px; top: 1047px; width: 426px; height: 448px; }
+.card-g { left: 40px;  top: 1525px; width: 556px; height: 347px; }
+.card-h { left: 635px; top: 1525px; width: 765px; height: 347px; }
+
+/* =========================================================
+   横屏：音乐播放器（仅 body.landscape 显示）
+   坐标来自横屏蒙版：1573, 47  656×268
+   ========================================================= */
+/* 左侧：专辑封面容器（未播放时放音乐图标） */
+/* 右侧文字区 */
+/* 标题：限宽到进度条一半，超出换行 */
+/* 6 个频谱柱：静止是小圆点，有声时向上拉伸成竖条 */
+/* 艺术家：比标题小两号 */
+/* 进度条：厚度 7px，底边 187 → 与时间轴(192) 间距 5px（比原来多 1px）
+ * 卡片坐标 top=210，时间轴仍固定在 222 */
+/* 时间轴：固定在进度条下方，未播放时隐藏 */
+/* =========================================================
+   横屏专属：WiFi / 音量 / 电量 组件 + 右侧 dock
+   ========================================================= */
+.wifi-panel { position: absolute; left: 2348.97px; top: 97.97px; width: 120px; height: 120px; display: none; }
+.dock { position: absolute; left: 2321px; top: 417px; width: 164px; height: 642px; display: none; z-index: 10; }
+
+body.landscape .wifi-panel { display: block; }
+body.landscape .dock { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 34px; }
+
+/* 整个组件是一张 SVG，半圆、4 个点、WiFi 都在同一个坐标系里 */
+.wifi-svg { width: 120px; height: 120px; display: block; overflow: visible; }
+
+/* 音量：220° 圆弧，线宽加粗到 10 */
+.vol-track, .vol-fill {
+  fill: none;
+  stroke: #ffffff;
+  stroke-width: 9;
+  stroke-linecap: round;
+}
+.vol-track { opacity: .4; }
+.vol-fill { stroke-dasharray: 0 400; transition: stroke-dasharray .35s ease; }
+
+/* 电量 4 点：沿圆周分布 */
+.bat-dot {
+  fill: #ffffff; opacity: .4;
+  transition: opacity .25s;
+}
+.bat-dot.on { opacity: 1; }
+
+/* WiFi：圆心居中，弧加粗 */
+.sig-bar {
+  fill: none; stroke: #ffffff; stroke-width: 6; stroke-linecap: round;
+  opacity: .4; transition: opacity .25s;
+}
+.sig-dot { fill: #ffffff; opacity: .4; transition: opacity .25s; }
+.sig-bar.on, .sig-dot.on { opacity: 1; }
+
+/* dock 图标 */
+.dock button {
+  width: 116px; height: 116px;
+  padding: 0; border: none; background: none;
+  border-radius: 26px;
+  cursor: pointer;
+  transition: transform .16s ease, filter .16s ease;
+}
+.dock button img { width: 100%; height: 100%; display: block; border-radius: 26px; }
+.dock button:hover { transform: scale(1.07); filter: brightness(1.12); }
+.dock button:active { transform: scale(.97); }
+
+/* =========================================================
+   横屏布局（2560×1440）— 尺寸与竖屏基本一致，只是重新排列
+   坐标来自「横屏不透明度蒙版.png」的连通域分析
+   ========================================================= */
+/* 横屏舞台基准尺寸 */
+body.landscape #stage { width: 2560px; height: 1440px; }
+
+body.landscape .card-a { left: 101px;  top: 45px; }
+body.landscape .card-b { left: 549px;  top: 44px; }
+body.landscape .card-c { left: 1573px; top: 373px; }
+body.landscape .card-d { left: 1572px; top: 878px; }
+body.landscape .card-e { left: 101px;  top: 486px; }
+body.landscape .card-f { left: 1063px; top: 485px; height: 530px; }
+body.landscape .card-g { left: 101px;  top: 1005px; }
+body.landscape .card-h { left: 724px;  top: 1004px; }
+
+/* 横屏 CPU/GPU 卡：去掉「CPU」「GPU」小标题，名称和图标同一行 */
+body.landscape .card-c .head-txt h1 { display: none; }
+body.landscape .card-c .head-txt p { top: 2px; }
+body.landscape .card-c .ring { top: 108px; }   /* 只上移，大小和竖屏一致 */
+body.landscape .card-c .stats { top: 350px; }
+
+/* =========================================================
+   A 时间
+   ========================================================= */
+.clock {
+  position: absolute;
+  left: 39px; top: 51px;
+  font-size: 68px;
+  letter-spacing: 3.3px;
+  color: #d5d7db;
+}
+.date {
+  position: absolute;
+  left: 40px; top: 138px;
+  font-size: 31px;
+  letter-spacing: 1.4px;
+  color: #eef1f5;
+}
+.loc {
+  position: absolute;
+  left: 39px; top: 207px;
+  display: flex;
+  align-items: center;   /* 图标与地址文字垂直居中对齐 */
+}
+.ic-pin {
+  width: 24px; height: 28px;
+  flex: none;
+  margin-right: 27px;
+  color: #eef1f5;      /* symbol 里用 currentColor 填水滴 */
+  fill: none;
+  stroke: #eef1f5;
+  stroke-width: 1.7;
+  stroke-linejoin: round;
+}
+.loc span {
+  font-size: 26px;
+  letter-spacing: .7px;
+  line-height: 1;
+  color: #f3f5f8;
+}
+
+.wnow { position: absolute; left: 21px; top: 274px; }
+.ic-cloud {
+  /* .wnow 在卡片内 (21,274)，这里再偏 (9,8) → 图标落在卡片 (30,282)，
+     即 2560×1440 画布上的 (131,327)，尺寸严格 54×54。
+     天气图标由应用内置 */
+  position: absolute;
+  left: 9px; top: 8px;
+  width: 54px; height: 54px;
+  display: block;
+}
+/* display:block 会盖掉 hidden 的默认样式，这里补回来 */
+.ic-cloud[hidden] { display: none; }
+/* 图标下方原本有一条 45×3 的装饰横线，晴天看着像"太阳下面多一条杠"，去掉 */
+.wtemp {
+  position: absolute;
+  left: 81px; top: 0;
+  font-size: 41px;
+  letter-spacing: 2.6px;
+  color: #ffffff;
+}
+.wtemp em {
+  font-style: normal;
+  font-size: 27px;
+  position: relative;
+  top: -15px;
+  left: 0;
+}
+.wrange {
+  position: absolute;
+  left: 101px; top: 323px;
+  font-size: 23px;
+  letter-spacing: 0;
+  color: #f0f2f5;
+}
+.wrange i { display: inline-block; width: 5px; }
+.whaze {
+  position: absolute;
+  left: 212px; top: 323px;
+  font-size: 20px;
+  letter-spacing: .6px;
+  color: #e4e7ec;
+}
+
+/* =========================================================
+   B 天气
+   ========================================================= */
+.wtitle {
+  position: absolute;
+  left: 38px; top: 47px;
+  font-size: 40px;
+  letter-spacing: .2px;
+  color: #ffffff;
+}
+/* 600 现在走浏览器合成加粗（项目里只有 Medium 一个字重），
+   在苹方上会比原来的真 Semibold 粗一圈，所以用 500 命中真字体 */
+.wtitle b { font-family: var(--ttl); font-weight: 500; }
+.wtitle i { font-style: normal; font-weight: 400; font-size: 35px; color: #eef1f5; margin-left: 12px; }
+
+.wslogan {
+  position: absolute;
+  left: 39px; top: 90px;
+  font-size: 27px;
+  color: #e9ecf1;
+}
+.wslogan .good { font-style: italic; letter-spacing: .5px; }
+.wslogan .evo { margin-left: 12px; font-style: italic; letter-spacing: 2px; }
+
+.wline1 {
+  position: absolute;
+  left: 40px; top: 145px;
+  font-size: 23.5px;
+  letter-spacing: .3px;
+  color: #dfe3ea;
+}
+.wline1 b { color: #ffffff; font-weight: 400; }
+.wline1 .gap { display: inline-block; width: 26px; }
+
+.wline2 {
+  position: absolute;
+  left: 40px; top: 185px;
+  font-size: 23.5px;
+  letter-spacing: .3px;
+  color: #dfe3ea;
+}
+.wline2 b { color: #ffffff; font-weight: 400; }
+.wline2 b.am { color: #f6e2b4; }
+.wline2 b.pm { color: #8b8bff; }
+.wline2 .u { font-size: 19px; }
+.wline2 .gap { display: inline-block; width: 24px; }
+
+/* 底部四格 */
+.wstrip {
+  position: absolute;
+  left: 40px; top: 236px;
+  width: 862px; height: 113px;
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, .10);
+  background: rgba(255, 255, 255, .045);
+  display: flex;
+  overflow: hidden;
+}
+.wcell {
+  position: relative;
+  flex: 1 1 0;
+  padding: 14px 0 0 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.wcell + .wcell { border-left: 1px solid rgba(255, 255, 255, .10); }
+.whead { display: flex; align-items: center; height: 24px; }
+.wico { width: 24px; height: 24px; flex: none; margin-right: 10px; fill: none; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.wico.leaf { stroke: #58d68a; }
+.wico.drop { stroke: #4fb8f5; }
+.wico.wind { stroke: #e6ebf2; }
+.wico.sun  { stroke: #f5c94b; }
+.whead span { font-size: 21px; color: #e9edf3; }
+/* 参数整体居中，字号比原来大 2 号。
+   用 padding-top 而不是 margin-top：flex 列容器里 margin 会被忽略，
+   padding 才会真正把数值往下推 */
+.wval {
+  position: static;
+  padding-top: 22px;
+  line-height: 1;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+.wval b { font-size: 33px; line-height: 1; letter-spacing: .5px; color: #ffffff; }
+.wval b.orange { color: #ff7a5c; }
+.wval b.blue { color: #4fb8f5; }
+.wval i { font-style: normal; font-size: 19px; line-height: 1; color: #cfd5de; margin: 0 4px 1px 3px; }
+.pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 27px;
+  padding: 0 12px;
+  margin: 0 0 3px 8px;
+  border-radius: 14px;
+  font-size: 18px;
+  line-height: 1;
+  vertical-align: middle;
+  color: #ffffff;
+}
+.pill.green  { background: #2fbf62; }
+.pill.purple { background: #a86ce0; margin-left: 0; }
+.pill.orange { background: #e8894a; }
+
+/* 右上角的球体：白天是太阳，晚上换成带月相的月亮（SVG 绘制） */
+.orb { position: absolute; left: 695px; top: 35px; width: 160px; height: 160px; }
+.orb svg { width: 100%; height: 100%; display: block; overflow: visible; }
+
+/* =========================================================
+   C CPU / GPU
+   ========================================================= */
+.card-c .half { position: absolute; top: 0; width: 327px; height: 473px; }
+.half-cpu { left: 0; }
+.half-gpu { left: 342px; }
+.cg-divider {
+  position: absolute;
+  left: 340px; top: 56px;
+  width: 1px; height: 366px;
+  background: rgba(255, 255, 255, .13);
+}
+
+.head { position: absolute; left: 44px; top: 43px; height: 40px; }
+.half-gpu .head { left: 57px; }
+.chip-box {
+  position: absolute;
+  left: -6px; top: -1px;
+  width: 50px; height: 50px;
+  border-radius: 15px;
+  border: 1px solid rgba(255, 255, 255, .07);
+  background: rgba(255, 255, 255, .09);
+}
+.ic-chip {
+  position: absolute;
+  left: 3px; top: 4px;
+  width: 43.5px; height: 43.5px;
+  fill: none;
+  stroke: #eef2f7;
+  stroke-width: 1.35;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.head-txt { position: absolute; left: 58px; top: 0; }
+.head-txt h1 {
+  position: absolute;
+  left: -4.5px; top: -4.5px;
+  font-family: var(--ttl);
+  font-weight: 500;   /* 和 WEATHER 同一字重，不再比它粗 */
+  font-size: 35px;
+  letter-spacing: 2px;
+  color: #ffffff;
+}
+.head-txt p {
+  position: absolute;
+  left: 2px; top: 43px;
+  width: 212px;
+  overflow: hidden;
+  font-size: 16.5px;
+  line-height: 20px;
+  color: #f2f5fa;
+}
+/* GPU 侧标题字距更松（与参考图对齐） */
+.half-gpu .head-txt h1 { left: 0; }
+.half-gpu .head-txt p { left: 0; width: 166px; }
+
+.ring {
+  position: absolute;
+  left: 62px; top: 147px;
+  width: 192px; height: 192px;
+}
+.ring svg { width: 100%; height: 100%; overflow: visible; transform: rotate(-90deg); }
+.ring-track { fill: none; stroke: rgba(255, 255, 255, .11); stroke-width: 14.6; }
+.ring-value {
+  fill: none;
+  stroke: var(--cyan);
+  stroke-width: 14.6;
+  stroke-linecap: round;
+  stroke-dasharray: 0 565.49px;
+  filter: drop-shadow(0 0 8px rgba(110, 240, 255, .55));
+}
+.ring-txt {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.ring-txt { padding-left: 34px; padding-top: 4px; }
+.ring-txt b {
+  font-size: 46px;
+  letter-spacing: .5px;
+  color: #ffffff;
+}
+.ring-txt i { font-style: normal; font-size: 46px; color: #ffffff; margin-left: 8px; }
+
+.stats {
+  position: absolute;
+  left: 51px; top: 382px;
+  width: 262px;
+  display: grid;
+  grid-template-columns: 122px 140px;
+  row-gap: 20px;
+}
+.stat { display: flex; align-items: center; height: 22px; }
+.stat .ic {
+  width: 10px; height: 20px;
+  flex: none;
+  margin-left: -1px;
+  margin-right: 10px;
+  fill: none;
+  stroke: #e4e8ee;
+  stroke-width: 2.1;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+/* 频率 / 功耗的图标放大一点；用 margin 补回宽度差，后面文字位置不变 */
+.stat .ic-lg {
+  width: 13px; height: 26px;
+  margin-right: 7px;
+}
+.stat b { font-size: 24px; color: #ffffff; letter-spacing: 0; }
+.stat i { font-style: normal; font-size: 21px; color: #e6eaf0; margin-left: 5px; }
+
+/* =========================================================
+   D 设备电量
+   ========================================================= */
+.card-d .title { left: 39px; top: 27.5px; font-size: 26.5px; }
+
+/* 设备区自己的数据源提示：只在这块不健康时出现，和右下角那条 AIDA64 提示互不影响。
+ * 左边缘对齐下面电量列的「--」（.dev-pct 在 right:136 处右锚，"--" 宽 25.2 →
+ * 左边缘落在 484.8）。用 left 而不是 right，改文案长度也不会跑位。 */
+.dev-src {
+  position: absolute;
+  left: 484.8px; top: 36px;
+  font-size: 15px;
+  letter-spacing: .04em;
+  color: rgba(255, 255, 255, .42);
+  opacity: 0;
+  transition: opacity .3s;
+  pointer-events: none;
+  white-space: nowrap;
+}
+.dev-src.on { opacity: 1; }
+
+.dev-list {
+  position: absolute;
+  left: 0; top: 47.5px;
+  width: 646px; max-height: 426px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+  touch-action: pan-y;
+  user-select: none;
+}
+.dev-list::-webkit-scrollbar {
+  display: none;
+}
+.dev-scroll-controls {
+  position: absolute;
+  top: 15px; right: 63px;
+  display: flex;
+  gap: 8px;
+}
+.dev-scroll-controls[hidden], body.devring .dev-scroll-controls { display: none; }
+.dev-scroll-controls button {
+  display: grid;
+  place-items: center;
+  width: 44px; height: 33px;
+  padding: 0;
+  color: #e8ecf4;
+  background: rgba(255, 255, 255, .07);
+  border: 1px solid rgba(255, 255, 255, .17);
+  border-radius: 9px;
+  cursor: pointer;
+}
+.dev-scroll-controls button:disabled {
+  opacity: .35;
+  cursor: default;
+}
+.dev-scroll-controls button:hover:not(:disabled) {
+  background: rgba(255, 255, 255, .16);
+}
+.dev-scroll-controls svg {
+  width: 22px; height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.dev-list.can-scroll { cursor: grab; }
+.dev-list.can-scroll.is-dragging { cursor: grabbing; }
+.dev-row {
+  position: relative;
+  height: 71px;
+  display: block;
+}
+/* 分隔线不贯穿整行：从名称左侧 101px 起，到卡片右边缘（对齐参考图 855→1399） */
+.dev-row::after {
+  content: "";
+  position: absolute;
+  left: 101px; right: 0; bottom: 0;
+  height: 1px;
+  background: rgba(255, 255, 255, .085);
+}
+.dev-row:last-child::after { display: none; }
+.dev-row .ico {
+  position: absolute;
+  left: 48.5px; top: 23px;
+  width: 33px; height: 33px;
+  color: #eef2f7;      /* 未识别图标的描边用 currentColor */
+  fill: #eef2f7;
+  stroke: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.dev-name {
+  position: absolute;
+  left: 109px; right: 200px; top: 31px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 19.5px;
+  letter-spacing: 1.1px;
+  color: #ffffff;
+}
+.dev-pct {
+  position: absolute;
+  right: 136px; top: 29px;
+  font-size: 20px;
+  letter-spacing: .5px;
+  color: #ffffff;
+}
+.dev-connection {
+  position: absolute;
+  right: 71px; top: 26px;
+  width: 31px; height: 26px;
+  color: #b9bfc9;
+  text-align: center;
+}
+.dev-connection svg {
+  width: 24px; height: 24px;
+}
+.battery {
+  position: absolute;
+  right: 71px; top: 30px;
+  width: 31px; height: 17px;
+  border: 2px solid #b9bfc9;
+  border-radius: 5px;
+  padding: 2px;
+}
+.battery::after {
+  content: "";
+  position: absolute;
+  right: -5px; top: 4.5px;
+  width: 3px; height: 6px;
+  border-radius: 0 2px 2px 0;
+  background: #b9bfc9;
+}
+.battery i { display: block; height: 100%; border-radius: 2px; background: #e8ecf2; }
+.battery[hidden] { display: none; }
+.dev-row.zero .dev-name { color: #ffffff; }
+.dev-row.zero .dev-pct { color: #ffffff; }
+/* 0% 的电池框和未识别设备保持同一个灰度 */
+.dev-row.zero .battery { border-color: #b9bfc9; }
+.dev-row.zero .battery::after { background: #b9bfc9; }
+.dev-row.zero .battery i { display: none; }
+
+/* 这一路 AIDA64 完全没返回数据：整行淡化，名称和电量都显示 "--"。
+   电池框保持纯空框，和上方「有设备名但没电量」的 zero 状态一致（不再画 ×） */
+
+/* 低电量（>0 且 ≤20%）：只把电池中间的填充条变红，边框和百分比数字保持原样 */
+.dev-row.low .battery i { background: #ff453a; }
+
+/* 充电中：填充条变绿 + 中间叠一个 iOS 原生闪电。
+   放在 .low 之后，充电时优先级高于低电量红色 */
+.battery .bolt { display: none; }
+.dev-row.charging .battery i { background: #30d158; }
+/* 充电且充满：薄荷青绿，和「在充电」的绿色区分开。放在 charging 之后覆盖它。
+   拔掉充电器后 charging 类被移除，填充条自然回到默认的 #e8ecf2 白色 */
+.dev-row.charging.full .battery i { background: #64ddba; }
+/* 满电时外框和右侧小凸起也换成青绿 —— 内部和外框同色，看着是一整块色块。
+   但 padding 那 2px 还留着缝，靠它勾出电池轮廓，否则 31×17 的实际尺寸下
+   就只剩一个小绿方块、认不出是电池了。尺寸一个都没动。 */
+.dev-row.charging.full .battery        { border-color: #64ddba; }
+.dev-row.charging.full .battery::after { background: #64ddba; }
+.dev-row.charging .battery .bolt {
+  display: block;
+  position: absolute;
+  left: 50%; top: 50%;
+  /* 电池 31×17、border 2px → 边框内侧正好 13px 高。
+     闪电按 13px 走，上下尖端刚好抵住内边缘、不穿出外框。
+     只锁高度让宽度按 1:1.56 的比例走，避免拉变形 */
+  height: 13px; width: auto;
+  transform: translate(-50%, -50%);
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* =========================================================
+   D-2 设备电量 · 圆环样式
+   坐标来自 电池圆环组件.psd（画布 680×498，卡片 9,10 660×477）。
+   等比缩放到实际卡片 646×473：k = 646/660 ≈ 0.9788
+   卡内坐标 = (psd 坐标 - 9,10) × k
+   ========================================================= */
+.dev-ring { display: none; }
+
+/* 切到圆环样式时隐藏列表，标题位置按新参考图走（字号不变） */
+body.devring .dev-list { display: none; }
+body.devring .dev-ring { display: block; }
+body.devring .card-d .title { left: 43.3px; top: 45.1px; }
+
+.dev-ring { position: absolute; inset: 0; }
+
+/* 设备类型：耳机 / 鼠标 / 键盘 / 手柄 / 手机 / 通用设备 */
+.dr-type {
+  position: absolute;
+  left: 50.6px; top: 118.2px;
+  font-size: 45.6px;
+  letter-spacing: .5px;
+  color: #ffffff;
+}
+
+/* 设备名称：优先 renamedName，没有才用 name */
+.dr-name {
+  position: absolute;
+  left: 52.9px; top: 175.8px;
+  font-size: 31px;
+  letter-spacing: .3px;
+  color: #ffffff;
+}
+
+/* 电量百分比 */
+.dr-pct {
+  position: absolute;
+  left: 52.5px; top: 243.4px;
+  font-size: 65.6px;
+  letter-spacing: .5px;
+  color: #ffffff;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 状态行：⚡ + 在线 / 充电中 / 已休眠 */
+.dr-status {
+  position: absolute;
+  left: 53.8px; top: 343.2px;
+  display: flex;
+  align-items: center;
+  gap: 8.8px;
+  font-size: 30.6px;
+  letter-spacing: .5px;
+  color: #ffffff;
+}
+/* 闪电只在充电时出现，复用列表样式那张 iOS bolt */
+.dr-status .dr-bolt {
+  display: none;
+  height: 24.5px; width: auto;
+  opacity: .85;
+}
+.dr-status.charging .dr-bolt { display: block; }
+
+/* 电量更新时间 */
+.dr-time {
+  position: absolute;
+  left: 53.6px; top: 397.2px;
+  font-size: 20.4px;
+  letter-spacing: .3px;
+  color: #c2c7cf;
+}
+
+/* 右侧圆环：外径 227，环宽 17.6，底层轨道 + 上层进度弧（iOS 风格） */
+/* 圆环容器：227×227，环宽 17.6（中线半径 = (227-17.6)/2 = 104.7） */
+.dr-ring {
+  position: absolute;
+  left: 351.4px; top: 155.7px;
+  width: 227px; height: 227px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.dr-ring-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%; height: 100%;
+  /* 让 0° 落在 12 点方向，顺时针增长 */
+  transform: rotate(-90deg);
+  overflow: visible;
+}
+/* 底层固定轨道：整圈，暗一档 */
+.dr-ring-track {
+  fill: none;
+  stroke: rgba(255, 255, 255, .16);
+  stroke-width: 17.6;
+}
+/* 上层真实进度：stroke-dasharray 由 JS 按电量设置，圆头端点 */
+.dr-ring-bar {
+  fill: none;
+  stroke: #25a746;
+  stroke-width: 17.6;
+  stroke-linecap: round;
+  /* 电量变化时平滑过渡，不会一秒跳一下 */
+  transition: stroke-dasharray .45s cubic-bezier(.4, 0, .2, 1);
+}
+/* 满格：圆头会在起点叠出一个凸起，改成平头让整圈严丝合缝 */
+.dr-ring-bar.full { stroke-linecap: butt; }
+/* 环内图标：跟着设备类型走，未识别用 i-device */
+.dr-ico {
+  width: 80px; height: 80px;
+  color: #f9f9f9;
+  fill: #f9f9f9;
+  stroke: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* =========================================================
+   E 性能监控
+   ========================================================= */
+.card-e .title { left: 53px; top: 37.5px; font-size: 26.3px; }
+
+.card-e .meta {
+  position: absolute;
+  left: 215px; right: 78px; top: 40px;
+  display: flex;
+  align-items: baseline;
+  font-size: 23px;
+  color: #e4e8ee;
+  letter-spacing: .2px;
+}
+.card-e .meta b { font-weight: 400; color: #ffffff; margin-left: 23px; }
+/* 三组位置各自固定：FPS 左对齐 / 分辨率|刷新率 左对齐 / 下载速度右对齐。
+ * 原来是纯自然宽度 —— FPS 从 "--" 变成 "60" 会把后面两组整体推右 14px，
+ * 分辨率串变长也会推「|」和刷新率。给 m1 固定占位 + 让 m5 吃满剩余空间即可。 */
+.card-e .meta .m1 { flex: none; width: 110px; }
+/* 分辨率固定占位 135.7px（= 现在 "3840 x 2160" 的宽度）并右对齐：
+ *   文字变短（"--"）时右边缘不动 → 后面的「|」和刷新率位置恒定；
+ *   文字刚好占满时，和原来的左对齐视觉效果完全一样。 */
+.card-e .meta .m2 {
+  flex: none;
+  width: 135.7px;
+  margin-left: 53.8px;
+  text-align: right;
+  white-space: nowrap;
+}
+.card-e .meta .m3 { margin-left: 19px; color: #aeb4bf; }
+.card-e .meta .m4 { margin-left: 28px; }
+.card-e .meta .m5 { margin-left: auto; display: inline-flex; align-items: baseline; }
+/* 数字固定宽度右对齐，"MB/s" 紧跟其后 —— 这样单位位置永远不会左右跳 */
+.card-e .meta .m5 b {
+  display: inline-block;
+  width: 62px;
+  margin-left: 0;
+  text-align: right;
+  font-weight: 400;
+  color: #ffffff;
+  font-variant-numeric: tabular-nums;
+}
+.card-e .meta .m5 i {
+  font-style: normal;
+  margin-left: 8px;
+  color: #e4e8ee;
+}
+
+/* HWiNFO 数据源：FPS 240 · 200（1% L） · | · 0.0 ms（帧时间不带标题）。
+   两套 meta 都写死在 DOM 里，靠 body.hwsrc 切显隐，避免每帧重建节点。 */
+.card-e .meta-hw { display: none; }
+body.hwsrc .card-e .meta-aida { display: none; }
+body.hwsrc .card-e .meta-hw { display: flex; }
+/* 1% L 紧跟帧率，间距与「FPS → 帧数」一致 */
+.card-e .meta-hw .m1l { flex: none; margin-left: 23px; white-space: nowrap; }
+.card-e .meta-hw .m1l b { margin-left: 0; }
+/* 全角「）」右侧自带空白，不抵消的话竖线左边的视觉间距会比右边大，
+   这里用负 margin 把一部分吃掉 */
+.card-e .meta-hw .m1l em { font-style: normal; margin-left: 0; margin-right: -7px; }
+.card-e .meta-hw .m3 { margin-left: 20px; }
+.card-e .meta-hw .mft {
+  flex: none;
+  display: inline-flex;
+  align-items: baseline;
+  margin-left: 20px;
+}
+.card-e .meta-hw .mft b { margin-left: 0; font-variant-numeric: tabular-nums; }
+.card-e .meta-hw .mft i {
+  font-style: normal;
+  font-size: inherit;
+  color: #e4e8ee;
+  margin-left: 10px;
+}
+
+.plot { position: absolute; left: 30px; top: 88px; width: 830px; height: 308px; }
+#chart { display: block; width: 100%; height: 100%; }
+
+.legend {
+  position: absolute;
+  left: 133px; top: 406px;
+  display: flex;
+  align-items: center;
+  font-size: 22px;
+  color: #e4e8ee;
+}
+/* 参考图里四组「短线+文字」是等间距 160px 排的，用固定宽度避免文字宽度不同造成累积偏移 */
+.legend span { display: flex; align-items: center; flex: 0 0 160px; }
+.legend span:last-child { flex: 0 0 auto; }
+.legend i {
+  width: 48px; height: 2px;
+  margin-right: 15px;
+  border-radius: 2px;
+  background: var(--c);
+  box-shadow: 0 0 6px var(--c);
+}
+
+/* =========================================================
+   F 风扇状态
+   ========================================================= */
+.card-f .title { left: 37px; top: 36.5px; font-size: 26.3px; }
+
+.fan-list { position: absolute; left: 35px; top: 111px; width: 356px; }
+.fan-row { position: relative; height: 80px; }
+.fan-ico {
+  position: absolute;
+  left: 0; top: 0;
+  width: 50px; height: 50px;
+}
+.fan-ico svg { width: 100%; height: 100%; fill: none; stroke: none; }
+/* 全部统一成白色风扇（形状由 #i-fanblade 决定，颜色走 currentColor） */
+.fan-ico { color: #f0f2f5; }
+
+/* 自定义图标（用户属性「替换风扇图标」里选的）。默认不显示，
+   有自定义时给 .fan-ico 加 .custom 类，把 svg 藏起来换成 img。
+   object-fit: contain —— 不同来源的图标留白不一样，按比例塞进 50×50，
+   不会被拉伸变形（dock 图标那边就是没做这层，才要逐个调） */
+.fan-ico .fan-img {
+  display: none;
+  position: absolute;
+  inset: 0;
+  width: 100%; height: 100%;
+  object-fit: contain;
+}
+.fan-ico.custom svg { display: none; }
+.fan-ico.custom .fan-img { display: block; }
+
+.fan-body { position: absolute; left: 72px; top: 0; width: 312px; }
+.fan-top { position: relative; height: 26px; }
+.fan-top span { position: absolute; left: -2px; top: 7px; font-size: 21px; color: #dfe3ea; }
+.fan-top b { position: absolute; right: 86px; top: 4px; font-size: 20px; color: #ffffff; font-weight: 400; }
+.fan-top b em { font-style: normal; font-size: 20px; }
+.fan-top u { position: absolute; right: 35px; top: 4px; font-size: 20px; text-decoration: none; color: #dfe3ea; }
+
+.bar {
+  position: absolute;
+  left: 0; top: 38px;
+  width: 276px; height: 6px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, .19);
+  overflow: hidden;
+}
+.bar i {
+  display: block;
+  width: 0;
+  height: 100%;
+  border-radius: 3px;
+  background-image: linear-gradient(90deg, #9b8bfe 0%, #55bfe7 52%, #10f3d1 100%);
+  background-size: 276px 100%;
+  background-repeat: no-repeat;
+}
+
+/* =========================================================
+   G 存储
+   ========================================================= */
+.card-g .title { left: 54px; top: 37.5px; font-size: 26.3px; }
+
+.store-list { position: absolute; left: 0; top: 88px; width: 556px; }
+.store-list.compact { max-height: 244px; overflow-y: auto; }
+.store-list.compact .store-row { height: 61px; }
+.store-list.compact .store-size { top: 29px; }
+.store-list.compact .bar { top: 51px; }
+.store-row { position: relative; height: 80px; }
+.disk-ico {
+  position: absolute;
+  left: 60px; top: 11px;
+  width: 58px; height: 41px;
+  fill: #eef1f6;
+  stroke: none;
+}
+.disk-ico use { fill: #eef1f6; }
+.store-body { position: absolute; left: 140px; top: 0; width: 342px; }
+.store-line { position: relative; top: 11px; height: 20px; display: flex; justify-content: space-between; gap: 10px; font-size: 15.7px; color: #e8ebf1; }
+.store-line span { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.store-line b { flex: none; font-weight: 400; color: #eef1f6; font-variant-numeric: tabular-nums; }
+.store-size { position: absolute; left: 0; top: 37px; font-size: 17.5px; letter-spacing: -.55px; font-variant-numeric: tabular-nums; color: #ffffff; }
+.store-size b { font-size: 17.5px; font-weight: 400; }
+.store-size i { font-style: normal; font-size: 17.5px; color: #ffffff; margin: 0 1px; }
+.store-row .bar {
+  top: 62px;
+  width: 100%;
+  height: 5px;
+  left: 0;
+  background: rgba(255, 255, 255, .19);
+}
+.store-row .bar i {
+  background-image: linear-gradient(90deg, #57bdff 0%, #90afff 38%, #ada7ff 62%, #d2ace0 100%);
+  background-size: 342px 100%;
+}
+
+/* =========================================================
+   H 温度
+   ========================================================= */
+.pkg { position: absolute; left: 0; top: 0; width: 340px; height: 347px; }
+/* 圆环底下垫一块圆形玻璃盘，让轨道像嵌在玻璃上（参考图里圆环内圈比卡片底更亮）。
+   直径与圆环外径一致，边缘正好被轨道盖住，不会露出一圈多余边界 */
+.pkg::before {
+  content: "";
+  position: absolute;
+  left: 18px; top: 31px;
+  width: 300px; height: 300px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 38%,
+    rgba(255, 255, 255, .11) 0%,
+    rgba(255, 255, 255, .06) 50%,
+    rgba(255, 255, 255, .03) 74%,
+    rgba(255, 255, 255, .01) 92%,
+    rgba(255, 255, 255, 0) 100%);
+  pointer-events: none;
+}
+.arc {
+  position: absolute;
+  left: 18px; top: 31px;
+  width: 300px; height: 300px;
+  transform: rotate(135deg);
+  overflow: visible;
+}
+.arc-track {
+  fill: none;
+  stroke: rgba(255, 255, 255, .30);
+  stroke-width: 19;
+  stroke-linecap: round;
+  stroke-dasharray: 574.9px 766.5px;
+}
+.arc-value {
+  fill: none;
+  stroke: var(--blue);
+  stroke-width: 19;
+  stroke-linecap: round;
+  stroke-dasharray: 0 766.5px;
+  filter: drop-shadow(0 0 10px rgba(78, 138, 255, .55));
+}
+.pkg-txt {
+  position: absolute;
+  left: 18px; top: 31px;
+  width: 300px; height: 300px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.pkg-num { display: flex; align-items: flex-start; margin-top: -30px; position: relative; top: -6px; }
+.pkg-num b { font-size: 47px; color: #ffffff; letter-spacing: .8px; }
+.pkg-num i { font-style: normal; font-size: 47px; color: #ffffff; margin-top: 0; }   /* 与数字同字号同高 */
+.pkg-cap { margin-top: 28px; font-size: 16.6px; color: #c2c8d2; letter-spacing: .3px; position: relative; top: 7px; left: 5px; }
+.pkg-range {
+  position: absolute;
+  left: 111px; top: 257px;
+  width: 116px;
+  display: flex;
+  justify-content: space-between;
+  font-size: 36px;
+  color: #eef1f6;
+}
+
+/* 尺寸按参考图实测：174 × 142，只包住「数字 + 标签」两行 */
+.mini {
+  position: absolute;
+  top: 133px;
+  width: 174px; height: 142px;
+  border-radius: 44px;
+  border: 1px solid rgba(255, 255, 255, .12);
+  background: rgba(255, 255, 255, .045);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .06);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding-top: 30px;      /* 数字固定在 30px 处，不再随标签高度浮动 */
+}
+.mini-1 { left: 344px; }
+.mini-2 { left: 555px; }
+.mini-num {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  line-height: 1;
+}
+.mini-num b { display: flex; align-items: flex-start; font-size: 40px; color: #ffffff; font-weight: 400; letter-spacing: .5px; }
+.mini-num em { font-style: normal; }
+.mini-num i { font-style: normal; font-size: 40px; margin-top: 0; }   /* 与数字同字号同高 */
+/* 英文标签绝对定位，下移 12px 不影响上面的温度数字 */
+.mini-cap { position: absolute; left: 0; right: 0; top: 94px; margin: 0; font-size: 17px; color: #d5dae2; text-align: center; line-height: 1; }
+
+/* =========================================================
+   状态
+   ========================================================= */
+#status {
+  position: absolute;
+  right: 34px; bottom: 54px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  letter-spacing: .04em;
+  color: #ff8585;
+  opacity: 0;
+  transition: opacity .3s;
+}
+#status.on { opacity: 1; }
+#status i {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: #ff5c5c;
+  box-shadow: 0 0 10px rgba(255, 92, 92, .9);
+}
+
+/* =========================================================
+   竖屏 dock：APP 行（上）+ 游戏行（下）
+   坐标来自原场景 scene.json，画布 1440×2560，y 轴向上：
+     屏幕中心 y = 2560 - (parent.y + child.y × parent.scale)
+   APP 行  parent(0,535) scale .15171 → 图标中心 y = 2025
+           中心 x：133, 262, 378, 495, 612, 729, 846, 963, 1080, 1197, 1313
+           图标 78（WIN 101），步长 116.8
+   游戏行  parent(150,250) scale .212 → 图标中心 y = 2310
+           原布局 7 图标 108 + 箭头，去掉箭头后按「两侧边距一致」重算：
+           容器 40~1401，左边距 56 → 图标区 1250
+           图标 113.5、间距 75.9、步长 189.4，从 x=96 起
+   ========================================================= */
+.dock-app, .dock-game {
+  position: absolute;
+  display: none;
+  align-items: center;      /* WIN 比其他高 23px，靠这个垂直居中对齐 */
+  z-index: 10;
+}
+body:not(.landscape) .dock-app,
+body:not(.landscape) .dock-game { display: flex; }
+
+/* top 取「最高图标」的顶边，靠 align-items:center 让矮的对齐中心 */
+.dock-app  { left: 82.5px;  top: 1974.5px; height: 101px;   gap: 38.8px; }
+.dock-game { left: 96px;    top: 2225px; height: 170.25px; gap: 75.9px; }
+
+.dock-app button,
+.dock-game button {
+  flex: none;
+  padding: 0; border: 0; background: none;
+  border-radius: 26%;          /* 等比圆角，所有图标裁成同一形状 */
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform .16s ease, filter .16s ease;
+}
+.dock-app button img,
+.dock-game button img {
+  width: 100%; height: 100%;
+  object-fit: cover;           /* 非正方形图居中裁切 */
+  display: block;
+}
+
+button.configured-shortcut { display: grid; place-items: center; }
+button.configured-shortcut img { width: auto; height: auto; max-width: 100%; max-height: 100%; object-fit: contain; }
+
+.dock-app button       { width: 78px;    height: 78px; }
+.dock-app button.win   { width: 101px;   height: 101px; }
+.dock-game button      { width: 113.5px; height: 170.25px; border-radius: 16px; background: #111521; }
+.dock-game button img.game-art { width: 100%; height: 100%; object-fit: cover; }
+.dock-game button .shortcut-tile { border-radius: 0; font-size: 14px; line-height: 1.3; padding: 7px; text-align: center; white-space: normal; overflow-wrap: anywhere; }
+
+.dock-app button:hover,
+.dock-game button:hover  { transform: scale(1.07); filter: brightness(1.12); }
+.dock-app button:active,
+.dock-game button:active { transform: scale(.97); }
+
+/* 游戏行标题，文字来自用户属性 docktext */
+.dock-title {
+  position: absolute;
+  left: 96px; top: 2185px;
+  display: none;
+  font-size: 24px;
+  line-height: 1;
+  letter-spacing: .5px;
+  color: #e8ecf2;
+  z-index: 11;
+  pointer-events: none;
+}
+body:not(.landscape) .dock-title { display: block; }
+
+/* 用户属性「显示应用栏 / 显示游戏栏」关闭时隐藏整行。
+   display:none 的元素不参与命中测试，所以点击事件自然一起失效，
+   不会出现「看不见但点得到」。规则放最后，同权重靠顺序覆盖上面的 display:flex */
+body.hide-appdock .dock-app { display: none; }
+body.hide-gamedock .dock-game,
+body.hide-gamedock .dock-title { display: none; }
+
+.dock-app[hidden], .dock-game[hidden], .dock-title[hidden], .dock[hidden] { display: none !important; }
+.dock-app { gap: 38px; }
+.dock-app button:first-child { width: 101px; height: 101px; }
+.shortcut-tile { display: grid; place-items: center; width: 100%; height: 100%; border-radius: 24%; background: linear-gradient(145deg, #92aaf2, #3d4b7b 72%); color: #fff; font-size: 30px; font-weight: 700; }
+.dock button:disabled, .dock-app button:disabled, .dock-game button:disabled { opacity: .6; }
+
+/* The desktop is visible through the native panel surface. */
+html.standalone-panel,
+.standalone-panel body,
+.standalone-panel #stage {
+  background: transparent;
+  cursor: auto;
+}
+.desktop-dock-frame { display: none; }
+.standalone-panel .card,
+.standalone-panel .desktop-dock-frame,
+.standalone-panel .dock {
+  isolation: isolate;
+  border-radius: 58px;
+  background:
+    radial-gradient(ellipse at 12% 0%, rgba(242, 244, 255, .12), transparent 60%),
+    radial-gradient(ellipse at 93% 102%, rgba(217, 225, 250, .10), transparent 59%),
+    linear-gradient(176deg, #3b3a45, #2a2933 56%, #30313b);
+  box-shadow:
+    inset 0 0 0 1px rgba(226, 230, 244, .26),
+    inset 0 8px 20px -14px rgba(242, 245, 255, .5),
+    inset 0 -9px 20px -15px rgba(218, 223, 250, .46);
+}
+.standalone-panel :is(.card, .desktop-dock-frame, .dock)::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  padding: 2px;
+  border-radius: inherit;
+  background:
+    radial-gradient(ellipse at 20% 0%, rgba(253, 254, 255, .6), transparent 51%),
+    radial-gradient(ellipse at 84% 100%, rgba(247, 250, 255, .52), transparent 49%),
+    linear-gradient(175deg, rgba(243, 245, 254, .4), rgba(219, 227, 249, .13) 48%, rgba(237, 240, 253, .42));
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  pointer-events: none;
+}
+/* Only this decorative layer is blurred. Text and controls sit above it. */
+.standalone-panel :is(.card, .desktop-dock-frame, .dock)::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background:
+    radial-gradient(ellipse at 26% 8%, rgba(198, 206, 222, .33), transparent 54%),
+    radial-gradient(ellipse at 84% 82%, rgba(150, 168, 193, .23), transparent 65%),
+    radial-gradient(ellipse at 66% 40%, rgba(19, 19, 32, .27), transparent 58%);
+  filter: blur(46px);
+  clip-path: inset(1px round 57px);
+  pointer-events: none;
+}
+.standalone-panel body:not(.landscape) .dock-game {
+  top: 2253.3px;
+  height: 113.5px;
+}
+.standalone-panel body:not(.landscape) .dock-game button {
+  height: 113.5px;
+  border-radius: 28px;
+}
+.standalone-panel .desktop-dock-frame {
+  position: absolute;
+  left: 40px;
+  width: 1360px;
+  pointer-events: none;
+}
+.standalone-panel body:not(.landscape) #overlay:has(#dockApp:not([hidden])) #desktop-app-frame {
+  display: block;
+  top: 1944px;
+  height: 154px;
+}
+.standalone-panel body:not(.landscape) #overlay:has(#dockGame:not([hidden])) #desktop-game-frame {
+  display: block;
+  top: 2138px;
+  height: 308px;
+}
+
+.weather-credit { position:absolute; right:46px; bottom:125px; color:rgba(230,237,249,.62); font-size:11px; }
