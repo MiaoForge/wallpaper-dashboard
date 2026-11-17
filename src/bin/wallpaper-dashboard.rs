@@ -58,6 +58,20 @@ fn icon() -> Result<Icon, tray_icon::BadIcon> {
     Icon::from_rgba(rgba, 32, 32)
 }
 
+fn close_dashboard_windows() {
+    for (name, close) in [
+        (
+            "desktop panel",
+            panel_window::close as fn() -> std::io::Result<bool>,
+        ),
+        ("settings window", settings_window::close),
+    ] {
+        if let Err(error) = close() {
+            collector_log::record(&format!("could not close {name}: {error}"));
+        }
+    }
+}
+
 fn run() -> Result<(), Error> {
     let collector = Collector::bind().map_err(|error| {
         format!("采集器无法监听 127.0.0.1:8766。请检查是否已有采集器在运行。\n{error}")
@@ -71,7 +85,7 @@ fn run() -> Result<(), Error> {
     menu.append(&settings)?;
     menu.append(&game_mode)?;
     menu.append(&quit)?;
-    let _tray = TrayIconBuilder::new()
+    let tray = TrayIconBuilder::new()
         .with_tooltip("硬件仪表盘采集器")
         .with_menu(Box::new(menu))
         .with_menu_on_left_click(true)
@@ -85,20 +99,20 @@ fn run() -> Result<(), Error> {
         GetCurrentThreadId()
     };
 
-    let mut requested_exit = false;
+    let mut finish_window_open = false;
     let result = thread::scope(|scope| {
+        let mut window_openers: Vec<thread::ScopedJoinHandle<'_, ()>> = Vec::new();
         let worker = scope.spawn(|| {
             let result = collector.serve(&stop);
             // SAFETY: The ID is from the main thread and remains live until join.
             unsafe { PostThreadMessageW(main_thread, SERVICE_STOPPED, 0, 0) };
             result
         });
-        'messages: loop {
+        let requested_exit = 'messages: loop {
             // SAFETY: msg points to writable storage and this thread owns the queue.
             let status = unsafe { GetMessageW(&mut msg, ptr::null_mut(), 0, 0) };
             if status <= 0 || msg.message == SERVICE_STOPPED {
-                requested_exit = status == 0;
-                break;
+                break status == 0;
             }
             // SAFETY: The message was retrieved from this thread's queue.
             unsafe {
@@ -107,8 +121,7 @@ fn run() -> Result<(), Error> {
             }
             for event in MenuEvent::receiver().try_iter() {
                 if event.id == *quit.id() {
-                    requested_exit = true;
-                    break 'messages;
+                    break 'messages true;
                 }
                 if event.id == *game_mode.id() {
                     sensor_probe::game_mode::set_manual(game_mode.is_checked());
@@ -121,29 +134,31 @@ fn run() -> Result<(), Error> {
                 } else {
                     continue;
                 };
-                scope.spawn(move || {
-                    if let Err(error) = open() {
+                window_openers.retain(|opener| !opener.is_finished());
+                let stop = &stop;
+                window_openers.push(scope.spawn(move || {
+                    if !stop.load(Ordering::Acquire)
+                        && let Err(error) = open()
+                    {
                         collector_log::record(&format!("could not open window: {error}"));
-                        show_error("无法打开仪表盘窗口。");
+                        if !stop.load(Ordering::Acquire) {
+                            show_error("无法打开仪表盘窗口。");
+                        }
                     }
-                });
+                }));
             }
-        }
+        };
         stop.store(true, Ordering::Release);
+        drop(tray);
+        if requested_exit && sensor_probe::settings::close_windows_on_exit() {
+            close_dashboard_windows();
+            finish_window_open = !window_openers.is_empty();
+        }
         worker.join().map_err(|_| "collector thread panicked")?
     });
-    if requested_exit && sensor_probe::settings::close_windows_on_exit() {
-        for (name, close) in [
-            (
-                "desktop panel",
-                panel_window::close as fn() -> std::io::Result<bool>,
-            ),
-            ("settings window", settings_window::close),
-        ] {
-            if let Err(error) = close() {
-                collector_log::record(&format!("could not close {name}: {error}"));
-            }
-        }
+    // An Explorer launch already in progress may have opened a window during shutdown.
+    if finish_window_open {
+        close_dashboard_windows();
     }
     result
 }
