@@ -11,12 +11,12 @@ Install the Rust toolchain and Microsoft Edge WebView2 Runtime. Build from the
 repository root in PowerShell:
 
 ```powershell
-cargo build --release --locked --manifest-path sensor-probe/Cargo.toml --bin wallpaper-dashboard
+cargo build --release --locked --bin wallpaper-dashboard
 ```
 
-Start `sensor-probe/target/release/wallpaper-dashboard.exe`. Open **设置** or
+Start `target/release/wallpaper-dashboard.exe`. Open **设置** or
 **显示 / 隐藏桌面面板** from its notification-area menu. If another copy of the
 collector is running, exit it before starting this build.
 
-See the [collector guide](sensor-probe/README.md) for hardware requirements,
+See the [collector guide](docs/collector.md) for hardware requirements,
 optional FPS tracking, diagnostics, and the origin of the adapted panel UI.

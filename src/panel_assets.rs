@@ -19,6 +19,10 @@ pub(crate) fn respond(request: Request) -> io::Result<()> {
             include_bytes!("../ui/panel/app.js"),
             "text/javascript; charset=utf-8",
         ),
+        "weather.js" => (
+            include_bytes!("../ui/panel/weather.js"),
+            "text/javascript; charset=utf-8",
+        ),
         "shortcut-dock.js" => (
             include_bytes!("../ui/panel/shortcut-dock.js"),
             "text/javascript; charset=utf-8",

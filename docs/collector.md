@@ -3,7 +3,7 @@
 Run from the repository root on Windows:
 
 ```powershell
-cargo run --locked --manifest-path sensor-probe/Cargo.toml -- --json
+cargo run --locked -- --json
 ```
 
 Use an administrator terminal to include MSI Center motherboard fans and the
@@ -45,7 +45,7 @@ uses internal shared memory and is only verified on this installation.
 Start the continuous collector in PowerShell:
 
 ```powershell
-cargo run --locked --manifest-path sensor-probe/Cargo.toml -- --serve
+cargo run --locked -- --serve
 ```
 
 Open http://127.0.0.1:8766/ for the local diagnostics page. For Ryzen SDK
@@ -62,10 +62,10 @@ The dashboard hides stale numbers until fresh snapshots arrive.
 Build the tray executable from the repository root:
 
 ```powershell
-cargo build --release --locked --manifest-path sensor-probe/Cargo.toml --bin wallpaper-dashboard
+cargo build --release --locked --bin wallpaper-dashboard
 ```
 
-Launch `target/release/wallpaper-dashboard.exe` under the `sensor-probe` folder.
+Launch `target/release/wallpaper-dashboard.exe` from the repository root.
 Choose **设置** in its tray menu to open the desktop settings window.
 It uses the Microsoft Edge WebView2 Runtime and runs as the desktop user,
 even when the collector runs as administrator. Closing it leaves collection
@@ -116,7 +116,7 @@ For games started by launchers whose shortcut points at a different executable,
 the manual PID mode is still available:
 
 ```powershell
-cargo run --release --locked --manifest-path sensor-probe/Cargo.toml -- --track-fps PATH_TO_PRESENTMON.EXE GAME_PID
+cargo run --release --locked -- --track-fps PATH_TO_PRESENTMON.EXE GAME_PID
 ```
 
 The tracker publishes presented FPS and mean frame time in five-second
