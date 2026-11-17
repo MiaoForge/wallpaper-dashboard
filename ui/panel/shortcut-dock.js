@@ -72,11 +72,26 @@ window.initConfiguredDock = function () {
     title.hidden = games.length === 0;
   }
   render();
-  if (typeof window.wallpaperShortcutKey !== "string") return;
-  async function refresh() {
-    try { render(await request("list")); }
-    catch { render(); }
-    finally { setTimeout(refresh, 3500); }
+  if (typeof window.wallpaperShortcutKey !== "string") return () => {};
+  let lastRevision;
+  let lastRefresh = -Infinity;
+  let retryAt = 0;
+  let refreshing = false;
+  async function refresh(revision) {
+    const now = performance.now();
+    const interval = Number.isSafeInteger(revision) ? 30000 : 3500;
+    if (refreshing || now < retryAt || (revision === lastRevision && now - lastRefresh < interval)) return;
+    refreshing = true;
+    try {
+      render(await request("list"));
+      lastRevision = revision;
+      lastRefresh = performance.now();
+    } catch {
+      retryAt = performance.now() + 3500;
+    } finally {
+      refreshing = false;
+    }
   }
   refresh();
+  return refresh;
 };

@@ -18,9 +18,18 @@ use crate::{
 type Sample = fn() -> Result<Vec<Device>, Issue>;
 type Snapshot = Arc<RwLock<Vec<Backend>>>;
 
+#[derive(serde::Serialize)]
+struct SnapshotResponse<'a> {
+    schema_version: u8,
+    backends: &'a [Backend],
+    weather_city: Option<String>,
+    gpu_paused: bool,
+    dock_revision: u64,
+}
+
 const ADDRESS: &str = "127.0.0.1:8766";
 const WORKERS: [(&str, u64, Sample); 9] = [
-    ("windows", 2, windows::sample),
+    ("windows", 2, windows::sample_live),
     ("amd_adlx", 2, amd::gpu),
     ("amd_ryzen_sdk", 4, amd::cpu),
     ("msi_center", 1, msi::sample),
@@ -326,12 +335,13 @@ fn respond(
                 .map(|settings| settings.city);
             let body = {
                 let samples = samples.read().expect("snapshot lock poisoned");
-                serde_json::to_vec(&serde_json::json!({
-                    "schema_version": 1,
-                    "backends": &*samples,
-                    "weather_city": weather_city,
-                    "gpu_paused": game_mode::active(),
-                }))?
+                serde_json::to_vec(&SnapshotResponse {
+                    schema_version: 1,
+                    backends: &samples,
+                    weather_city,
+                    gpu_paused: game_mode::active(),
+                    dock_revision: crate::shortcut_http::dock_revision(),
+                })?
             };
             (body, "application/json", origin.as_deref() == Some("null"))
         }

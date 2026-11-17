@@ -68,6 +68,7 @@ window.readRustWallpaperSnapshot = async function () {
     if (!Object.keys(sensors).length) throw new Error("source offline");
     return { sensors, cpuName: cpu?.name, gpuName: gpu?.name, fpsApp: frames?.name,
       weatherCity: snapshot.weather_city, gpuPaused: snapshot.gpu_paused === true, volumes,
+      dockRevision: snapshot.dock_revision,
       batteryAvailable: batteries.length > 0,
       batteries: batteries.flatMap(backend => backend.devices).filter(device => ["battery", "gamepad", "peripheral"].includes(device.kind)).map(device => ({
         name: device.name, pct: reading(device, "charge"), charging: reading(device, "external_power") === 1, connection: device.connection, type: device.kind === "gamepad" ? "gamepad" : "",

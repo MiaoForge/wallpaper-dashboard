@@ -2,7 +2,7 @@ use std::{
     io::{self, Read},
     sync::{
         Arc, Mutex, OnceLock,
-        atomic::{AtomicBool, Ordering},
+        atomic::{AtomicBool, AtomicU64, Ordering},
     },
     thread,
     time::{Duration, Instant},
@@ -25,8 +25,21 @@ static CATALOG: OnceLock<Mutex<Catalog>> = OnceLock::new();
 static LAUNCH: Mutex<()> = Mutex::new(());
 static ICON: Mutex<()> = Mutex::new(());
 static RECENT_ICON_BUSY: AtomicBool = AtomicBool::new(false);
+static DOCK_REVISION: OnceLock<AtomicU64> = OnceLock::new();
 static RECENT_ICONS: Mutex<std::collections::VecDeque<(String, Option<String>)>> =
     Mutex::new(std::collections::VecDeque::new());
+
+fn dock_counter() -> &'static AtomicU64 {
+    DOCK_REVISION.get_or_init(|| AtomicU64::new(crate::telemetry::unix_ms()))
+}
+
+pub(crate) fn dock_revision() -> u64 {
+    dock_counter().load(Ordering::Acquire)
+}
+
+pub(crate) fn dock_changed() {
+    dock_counter().fetch_add(1, Ordering::Release);
+}
 
 pub(crate) fn cached_icon(shortcut: &Shortcut) -> Option<String> {
     if let Some((_, icon)) = RECENT_ICONS
@@ -48,6 +61,7 @@ pub(crate) fn cached_icon(shortcut: &Shortcut) -> Option<String> {
                 icons.pop_front();
             }
             RECENT_ICON_BUSY.store(false, Ordering::Release);
+            dock_changed();
         });
     }
     None
@@ -216,7 +230,10 @@ pub fn handle(mut request: Request) -> io::Result<()> {
                 return json_response(request, 400, json!({"error":"配置格式无效"}), false);
             };
             match shortcuts::save_layout(&layout, &catalog()) {
-                Ok(()) => json_response(request, 200, json!({"ok":true}), false),
+                Ok(()) => {
+                    dock_changed();
+                    json_response(request, 200, json!({"ok":true}), false)
+                }
                 Err(error) => {
                     json_response(request, 400, json!({"error":error.to_string()}), false)
                 }

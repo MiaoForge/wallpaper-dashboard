@@ -164,9 +164,7 @@ function clamp(n, min, max) {
 }
 
 function setText(id, value, digits = 0) {
-  const el = $(id);
-  if (!el) return;
-  el.textContent = value == null ? "--" : Number(value).toFixed(digits);
+  setRaw(id, value == null ? null : Number(value).toFixed(digits));
 }
 
 let storageSignature;
@@ -191,7 +189,8 @@ function renderStorage(volumes) {
 
 function setRaw(id, value) {
   const el = $(id);
-  if (el) el.textContent = value == null || value === "" ? "--" : String(value);
+  const text = value == null || value === "" ? "--" : String(value);
+  if (el && el.textContent !== text) el.textContent = text;
 }
 
 /* 环形：0-100% */
@@ -772,10 +771,8 @@ function applyData(d) {
 
   // 下载速度：固定 1 位小数，单位由 HTML 单独排版，位置不会跳
   const netText = Number.isFinite(Number(d.net)) ? Number(d.net).toFixed(1) : "0.0";
-  const netEl = $("netval");
-  if (netEl) netEl.textContent = netText;
-  const netElHw = $("netval-hw");
-  if (netElHw) netElHw.textContent = netText;
+  setRaw("netval", netText);
+  setRaw("netval-hw", netText);
 
   // The snapshot provides only supported Windows battery readings.
   // 30 秒保鲜期内不覆盖 —— 那段时间显示的是接口的最后一次好数据。
@@ -974,9 +971,12 @@ function setSensorStatus(show, text) {
   if (el.classList.contains("on") !== !!show) el.classList.toggle("on", !!show);
 }
 
+let refreshConfiguredDock;
+
 async function tick() {
   try {
     const data = await window.readRustWallpaperSnapshot();
+    refreshConfiguredDock(data.dockRevision);
     window.panelWeather.setCity(data.weatherCity);
     if (CONFIG.cpuName === DEFAULT_CPU_NAME && data.cpuName) setUserName("cpu", data.cpuName.replace(/\s+\d+-Core Processor$/i, ""));
     if (CONFIG.gpuName === DEFAULT_GPU_NAME && data.gpuName) setUserName("gpu", data.gpuName);
@@ -1091,7 +1091,7 @@ function boot() {
   bindDeviceScroll($("device-list"));
   renderRing([]);   // 先把圆环占位符铺好，等第一帧数据再填
   renderFanNames();
-  window.initConfiguredDock();
+  refreshConfiguredDock = window.initConfiguredDock();
   window.panelWeather.start(qs.get("user"));
   updateClock();
   scheduleClock();

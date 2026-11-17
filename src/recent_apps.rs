@@ -1,4 +1,5 @@
 use std::{
+    collections::VecDeque,
     fs,
     sync::{
         Mutex, OnceLock,
@@ -76,33 +77,29 @@ pub(crate) fn ids() -> Vec<String> {
         .collect()
 }
 
-fn record(id: &str, started_at: u64) {
-    let mut list = history().lock().expect("recent apps lock poisoned");
-    if list
-        .iter()
-        .any(|item| item.id == id && item.started_at >= started_at)
-    {
-        return;
+fn promote(list: &mut Vec<Launch>, id: &str, started_at: u64) -> bool {
+    if list.first().is_some_and(|item| item.id == id) {
+        return false;
     }
     list.retain(|entry| entry.id != id);
-    let position = list.partition_point(|entry| entry.started_at > started_at);
     list.insert(
-        position,
+        0,
         Launch {
             id: id.into(),
             started_at,
         },
     );
     list.truncate(32);
-    if let Ok(file) = shortcuts::state_file("recent-apps.json")
-        && let Ok(body) = serde_json::to_vec(&*list)
-    {
-        let _ = shortcuts::write_atomic(&file, &body);
-    }
+    true
+}
+
+fn persist() -> std::io::Result<()> {
+    let file = shortcuts::state_file("recent-apps.json")?;
+    let body = serde_json::to_vec(&*history().lock().expect("recent apps lock poisoned"))?;
+    shortcuts::write_atomic(&file, &body)
 }
 
 pub(crate) fn watch(stop: &AtomicBool) {
-    let started = crate::telemetry::unix_ms() / 1000;
     let Ok(mut system) = sysinfo::System::new() else {
         return;
     };
@@ -117,6 +114,8 @@ pub(crate) fn watch(stop: &AtomicBool) {
         .collect();
     let mut last_scan = Instant::now();
     let mut previous = None;
+    let mut resolved = VecDeque::new();
+    let mut pending_save: Option<Instant> = None;
     while !stop.load(Ordering::Acquire) {
         if last_scan.elapsed() >= Duration::from_secs(120) {
             targets = shortcuts::application_targets();
@@ -125,19 +124,25 @@ pub(crate) fn watch(stop: &AtomicBool) {
                 .map(|path| frames::path_key(path) + "\\")
                 .collect();
             last_scan = Instant::now();
-            previous = None;
+            resolved.clear();
         }
         let foreground = frames::foreground();
         if foreground != previous
             && let Some(pid) = foreground.map(sysinfo::Pid::from_u32)
         {
-            system.refresh_processes(sysinfo::ProcessesToUpdate::Some(&[pid]), true);
+            system.refresh_processes_specifics(
+                sysinfo::ProcessesToUpdate::Some(&[pid]),
+                true,
+                sysinfo::ProcessRefreshKind::nothing().with_exe(sysinfo::UpdateKind::OnlyIfNotSet),
+            );
             if let Some(process) = system.process(pid) {
-                let launched = process.start_time();
-                if launched >= started {
-                    if let Some(id) = packaged_id(pid.as_u32()) {
-                        record(&id, launched);
-                    } else if let Some(path) = process.exe() {
+                let process_key = (pid, process.start_time());
+                let cached = resolved.iter().position(|(key, _)| *key == process_key);
+                let id = if let Some(index) = cached {
+                    resolved.remove(index).map(|(_, id)| id)
+                } else {
+                    packaged_id(pid.as_u32()).or_else(|| {
+                        let path = process.exe()?;
                         let key = frames::path_key(path);
                         let file = key.rsplit('\\').next().unwrap_or_default();
                         if !matches!(
@@ -147,13 +152,31 @@ pub(crate) fn watch(stop: &AtomicBool) {
                                 | "wallpaper64.exe"
                                 | "wallpaper32.exe"
                         ) && !steam_paths.iter().any(|path| key.starts_with(path))
-                            && let Some(id) = targets.get(&key).or_else(|| {
-                                let resolved = path.canonicalize().ok()?;
-                                targets.get(&frames::path_key(&resolved))
-                            })
                         {
-                            record(id, launched);
+                            targets
+                                .get(&key)
+                                .or_else(|| {
+                                    let resolved = path.canonicalize().ok()?;
+                                    targets.get(&frames::path_key(&resolved))
+                                })
+                                .cloned()
+                        } else {
+                            None
                         }
+                    })
+                };
+                if let Some(id) = id {
+                    if promote(
+                        &mut history().lock().expect("recent apps lock poisoned"),
+                        &id,
+                        crate::telemetry::unix_ms() / 1000,
+                    ) {
+                        crate::shortcut_http::dock_changed();
+                        pending_save.get_or_insert_with(Instant::now);
+                    }
+                    resolved.push_back((process_key, id));
+                    if resolved.len() > 128 {
+                        resolved.pop_front();
                     }
                 }
                 previous = foreground;
@@ -161,6 +184,36 @@ pub(crate) fn watch(stop: &AtomicBool) {
         } else if foreground.is_none() {
             previous = None;
         }
+        if pending_save.is_some_and(|since| since.elapsed() >= Duration::from_secs(2)) {
+            pending_save = if persist().is_ok() {
+                None
+            } else {
+                Some(Instant::now())
+            };
+        }
         thread::park_timeout(Duration::from_millis(500));
+    }
+    if pending_save.is_some() {
+        let _ = persist();
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::promote;
+
+    #[test]
+    fn revisiting_an_existing_app_moves_it_to_the_front() {
+        let mut list = Vec::new();
+        assert!(promote(&mut list, "first", 1));
+        assert!(promote(&mut list, "second", 2));
+        assert!(promote(&mut list, "first", 2));
+        assert!(!promote(&mut list, "first", 3));
+        assert_eq!(
+            list.iter()
+                .map(|entry| entry.id.as_str())
+                .collect::<Vec<_>>(),
+            ["first", "second"]
+        );
     }
 }

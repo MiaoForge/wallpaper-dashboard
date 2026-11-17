@@ -90,12 +90,13 @@ existing readings immediately.
 With the collector running, open http://127.0.0.1:8766/shortcuts. Search the
 Start-menu and Desktop shortcuts or locally installed Steam titles. Add entries
 to either row, reorder them, and save. The app and game rows hold up to 11 and
-7 entries. The desktop panel refreshes the selected entries every few seconds.
+7 entries. The desktop panel checks for layout and icon changes with its normal
+sensor refresh and checks periodically for changes in the Steam catalog.
 Detected app icons can be replaced with a local image.
 
 Each row shows pinned entries first. Empty application slots are filled from
-foreground Windows applications that match known shortcuts. The collector keeps
-up to 32 recent shortcut IDs locally. Empty game slots are filled using last-played
+the most recently used foreground Windows applications that match known shortcuts.
+The collector keeps up to 32 recent shortcut IDs locally. Empty game slots are filled using last-played
 records from installed Steam games. The game row currently uses the Steam catalog.
 
 Open **显示 / 隐藏桌面面板** from the tray to display the shortcuts. The desktop
