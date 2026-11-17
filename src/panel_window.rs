@@ -1,5 +1,6 @@
 use std::{
     fs, io,
+    os::windows::ffi::OsStrExt,
     path::PathBuf,
     ptr,
     time::{Duration, Instant},
@@ -26,14 +27,14 @@ use windows_sys::{
             SetWindowRgn,
         },
         UI::{
-            Shell::{DefSubclassProc, RemoveWindowSubclass, SetWindowSubclass},
+            Shell::{DefSubclassProc, RemoveWindowSubclass, SetWindowSubclass, ShellExecuteW},
             WindowsAndMessaging::{
                 CS_OWNDC, EDD_GET_DEVICE_INTERFACE_NAME, FindWindowExW, GCL_STYLE, GW_HWNDNEXT,
                 GWL_EXSTYLE, GetClassLongPtrW, GetClientRect, GetShellWindow, GetTopWindow,
                 GetWindow, GetWindowLongPtrW, HWND_TOP, IsWindowVisible, LWA_ALPHA, PostMessageW,
-                SWP_FRAMECHANGED, SWP_NOACTIVATE, SetClassLongPtrW, SetLayeredWindowAttributes,
-                SetWindowLongPtrW, SetWindowPos, WM_CLOSE, WM_NCCALCSIZE, WM_NCDESTROY,
-                WS_EX_LAYERED,
+                SW_SHOWNORMAL, SWP_FRAMECHANGED, SWP_NOACTIVATE, SetClassLongPtrW,
+                SetLayeredWindowAttributes, SetWindowLongPtrW, SetWindowPos, WM_CLOSE,
+                WM_NCCALCSIZE, WM_NCDESTROY, WS_EX_LAYERED,
             },
         },
     },
@@ -249,6 +250,37 @@ enum PanelMessage {
     Move {
         delta: [f64; 2],
     },
+    LaunchApp {
+        request_id: u32,
+        target: PathBuf,
+    },
+}
+
+fn launch_app(hwnd: HWND, target: &std::path::Path) -> Result<(), String> {
+    if !target.is_absolute()
+        || !target
+            .extension()
+            .is_some_and(|ext| ext.eq_ignore_ascii_case("lnk"))
+        || !target.is_file()
+    {
+        return Err("Windows 快捷方式无效或已移除".into());
+    }
+    let target: Vec<_> = target.as_os_str().encode_wide().chain([0]).collect();
+    // SAFETY: the shortcut path is terminated and hwnd belongs to the panel.
+    let result = unsafe {
+        ShellExecuteW(
+            hwnd,
+            w!("open"),
+            target.as_ptr(),
+            ptr::null(),
+            ptr::null(),
+            SW_SHOWNORMAL,
+        )
+    } as isize;
+    if result <= 32 {
+        return Err(format!("Windows 无法打开快捷方式（错误 {result}）"));
+    }
+    Ok(())
 }
 
 fn apply_region(window: &Window, viewport: [f64; 2], cards: &[[f64; 5]]) -> io::Result<()> {
@@ -427,6 +459,12 @@ pub(super) fn run() -> Result<(), super::Error> {
     event_loop.run_return(|event, _, flow| {
         let mut exiting = false;
         match event {
+            Event::UserEvent(PanelMessage::LaunchApp { request_id, target }) => {
+                let error = launch_app(hwnd, &target).err();
+                let response = serde_json::json!({ "requestId": request_id, "error": error });
+                let _ =
+                    _webview.evaluate_script(&format!("window.finishPanelAppLaunch?.({response})"));
+            }
             Event::UserEvent(PanelMessage::Region { viewport, cards }) => {
                 if let Err(error) = apply_region(&window, viewport, &cards) {
                     collector_log::record(&format!("could not set desktop panel shape: {error}"));

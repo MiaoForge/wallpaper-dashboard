@@ -5,9 +5,14 @@ window.initConfiguredDock = function () {
   const title = document.getElementById("dockTitle");
   const endpoint = "http://127.0.0.1:8766/shortcuts/dock";
   let signature;
+  let lastLaunchId = 0;
+  const pendingLaunches = new Map();
+  if (window.wallpaperDashboardPanel) {
+    window.finishPanelAppLaunch = ({requestId, error}) => pendingLaunches.get(requestId)?.(error);
+  }
   const request = async (action, id) => {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 4500);
+    const timeout = setTimeout(() => controller.abort(), action === "launch" ? 15000 : 4500);
     try {
       const response = await fetch(endpoint, {
         method: "POST",
@@ -16,10 +21,38 @@ window.initConfiguredDock = function () {
         cache: "no-store",
         signal: controller.signal,
       });
-      if (!response.ok) throw new Error("HTTP " + response.status);
+      if (!response.ok) {
+        const error = await response.json().catch(() => null);
+        throw new Error(error?.error || `HTTP ${response.status}`);
+      }
       return await response.json();
     } finally { clearTimeout(timeout); }
   };
+  async function launch(item) {
+    if (window.wallpaperDashboardPanel && item.kind === "app" && item.id.startsWith("win:")) {
+      const {target} = await request("resolve_app", item.id);
+      if (target) {
+        await new Promise((resolve, reject) => {
+          const requestId = ++lastLaunchId;
+          const finish = error => {
+            clearTimeout(timeout);
+            pendingLaunches.delete(requestId);
+            if (error) reject(new Error(error));
+            else resolve();
+          };
+          const timeout = setTimeout(() => finish("等待超时，无法确认是否已启动"), 15000);
+          pendingLaunches.set(requestId, finish);
+          try {
+            window.ipc.postMessage(JSON.stringify({action:"launch_app", request_id:requestId, target}));
+          } catch {
+            finish("无法向桌面面板发送启动请求");
+          }
+        });
+        return;
+      }
+    }
+    await request("launch", item.id);
+  }
   function render({ apps = [], games = [] } = {}) {
     const next = JSON.stringify([apps, games]);
     if (next === signature) return;
@@ -58,8 +91,14 @@ window.initConfiguredDock = function () {
         event.stopPropagation();
         if (element.disabled) return;
         element.disabled = true;
-        try { await request("launch", item.id); }
-        catch { element.title = item.name + " · 启动失败"; }
+        element.title = item.name + " · 正在启动";
+        try {
+          await launch(item);
+          element.title = item.name;
+        } catch (error) {
+          const detail = error.name === "AbortError" ? "等待超时，无法确认是否已启动" : error.message;
+          element.title = item.name + " · " + detail;
+        }
         finally { element.disabled = false; }
       });
       return element;

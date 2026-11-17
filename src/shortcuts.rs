@@ -742,6 +742,18 @@ pub(crate) fn application_targets() -> HashMap<String, String> {
     targets
 }
 
+pub(crate) fn panel_launch_target(shortcut: &Shortcut) -> Option<&Path> {
+    (shortcut.kind == "app" && shortcut.id.starts_with("win:") && !league_shortcut(shortcut))
+        .then_some(Path::new(&shortcut.target))
+}
+
+fn league_shortcut(shortcut: &Shortcut) -> bool {
+    let name = shortcut.name.trim();
+    shortcut.source == "Windows"
+        && (name.eq_ignore_ascii_case("League of Legends")
+            || matches!(name, "英雄联盟" | "英雄联盟WeGame版" | "英雄联盟 WeGame版"))
+}
+
 pub fn launch(shortcut: &Shortcut) -> io::Result<()> {
     if shortcut.id.starts_with("win:") && !Path::new(&shortcut.target).is_file() {
         return Err(io::Error::new(
@@ -752,10 +764,7 @@ pub fn launch(shortcut: &Shortcut) -> io::Result<()> {
     // Delegate to the existing Explorer desktop. The selected path travels as data,
     // and launched apps use the desktop user's token even if the collector is elevated.
     let launch = || open_in_explorer(&shortcut.target, "");
-    let name = shortcut.name.trim();
-    let league = name.eq_ignore_ascii_case("League of Legends")
-        || matches!(name, "英雄联盟" | "英雄联盟WeGame版" | "英雄联盟 WeGame版");
-    if shortcut.source == "Windows" && league {
+    if league_shortcut(shortcut) {
         crate::game_mode::launch_league(launch)
     } else {
         launch()

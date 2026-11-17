@@ -105,6 +105,7 @@ fn catalog() -> Arc<Vec<Shortcut>> {
 enum DockRequest {
     List { key: String },
     Launch { key: String, id: String },
+    ResolveApp { key: String, id: String },
 }
 
 fn send(
@@ -248,7 +249,9 @@ pub fn handle(mut request: Request) -> io::Result<()> {
                 return json_response(request, 400, json!({"error":"请求无效"}), true);
             };
             let key = match &input {
-                DockRequest::List { key } | DockRequest::Launch { key, .. } => key,
+                DockRequest::List { key }
+                | DockRequest::Launch { key, .. }
+                | DockRequest::ResolveApp { key, .. } => key,
             };
             if !shortcuts::authorized(key) {
                 return json_response(request, 403, json!({"error":"壁纸未配对"}), true);
@@ -267,8 +270,11 @@ pub fn handle(mut request: Request) -> io::Result<()> {
                     json!(shortcuts::dock(&layout, &catalog)),
                     true,
                 ),
-                DockRequest::Launch { id, .. } => {
-                    let Some(shortcut) = shortcuts::bound_shortcut(&id, &layout, &catalog).cloned()
+                DockRequest::ResolveApp { .. } if origin.as_deref() != Some(SAME_ORIGIN) => {
+                    request.respond(Response::empty(403))
+                }
+                DockRequest::Launch { ref id, .. } | DockRequest::ResolveApp { ref id, .. } => {
+                    let Some(shortcut) = shortcuts::bound_shortcut(id, &layout, &catalog).cloned()
                     else {
                         return json_response(
                             request,
@@ -277,6 +283,11 @@ pub fn handle(mut request: Request) -> io::Result<()> {
                             true,
                         );
                     };
+                    if matches!(input, DockRequest::ResolveApp { .. }) {
+                        let target = shortcuts::panel_launch_target(&shortcut)
+                            .map(std::path::Path::to_string_lossy);
+                        return json_response(request, 200, json!({ "target": target }), false);
+                    }
                     thread::spawn(move || {
                         let Ok(_launch) = LAUNCH.try_lock() else {
                             let _ = json_response(

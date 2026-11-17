@@ -102,7 +102,9 @@ records from installed Steam games. The game row currently uses the Steam catalo
 
 Open **显示 / 隐藏桌面面板** from the tray to display the shortcuts. The desktop
 panel is built from assets in `ui/panel` and uses a local collector connection.
-Launch requests are limited to matched shortcuts and open through Windows Explorer.
+Launch requests are limited to matched shortcuts. The native desktop panel
+opens ordinary Windows application shortcuts in the desktop user's session.
+Other shortcuts open through Windows Explorer.
 
 ## Show game FPS in the desktop panel
 
