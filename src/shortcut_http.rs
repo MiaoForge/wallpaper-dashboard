@@ -41,27 +41,39 @@ pub(crate) fn dock_changed() {
     dock_counter().fetch_add(1, Ordering::Release);
 }
 
-pub(crate) fn cached_icon(shortcut: &Shortcut) -> Option<String> {
-    if let Some((_, icon)) = RECENT_ICONS
+fn recent_icon(id: &str) -> Option<Option<String>> {
+    RECENT_ICONS
         .lock()
         .expect("recent icons lock poisoned")
         .iter()
-        .find(|(id, _)| *id == shortcut.id)
-    {
-        return icon.clone();
+        .find(|(cached, _)| cached == id)
+        .map(|(_, icon)| icon.clone())
+}
+
+fn store_recent_icon(id: String, icon: Option<String>) {
+    let mut icons = RECENT_ICONS.lock().expect("recent icons lock poisoned");
+    icons.retain(|(cached, _)| cached != &id);
+    icons.push_back((id, icon));
+    if icons.len() > 64 {
+        icons.pop_front();
+    }
+    dock_changed();
+}
+
+pub(crate) fn cached_icon(shortcut: &Shortcut) -> Option<String> {
+    if let Some(icon) = recent_icon(&shortcut.id) {
+        return icon;
     }
     if !RECENT_ICON_BUSY.swap(true, Ordering::AcqRel) {
         let shortcut = shortcut.clone();
         thread::spawn(move || {
-            let icon = shortcuts::icon(&shortcut)
-                .map(|(mime, bytes)| format!("data:{mime};base64,{}", STANDARD.encode(bytes)));
-            let mut icons = RECENT_ICONS.lock().expect("recent icons lock poisoned");
-            icons.push_back((shortcut.id, icon));
-            if icons.len() > 64 {
-                icons.pop_front();
+            let _icon = ICON.lock().expect("shortcut icon lock poisoned");
+            if recent_icon(&shortcut.id).is_none() {
+                let icon = shortcuts::icon(&shortcut)
+                    .map(|(mime, bytes)| format!("data:{mime};base64,{}", STANDARD.encode(bytes)));
+                store_recent_icon(shortcut.id, icon);
             }
             RECENT_ICON_BUSY.store(false, Ordering::Release);
-            dock_changed();
         });
     }
     None
@@ -180,13 +192,28 @@ pub fn handle(mut request: Request) -> io::Result<()> {
         let entry = catalog().iter().find(|entry| entry.id == id).cloned();
         if let Some(entry) = entry {
             thread::spawn(move || {
+                if let Some(Some(icon)) = recent_icon(&entry.id)
+                    && let Some((mime, body)) = icon
+                        .strip_prefix("data:")
+                        .and_then(|icon| icon.split_once(";base64,"))
+                    && let Ok(bytes) = STANDARD.decode(body)
+                {
+                    let _ = send(request, 200, mime, bytes, false);
+                    return;
+                }
                 let Ok(_icon) = ICON.try_lock() else {
                     let _ = request.respond(Response::empty(429));
                     return;
                 };
                 let result = shortcuts::icon(&entry).map_or_else(
                     || (404, "text/plain", Vec::new()),
-                    |(mime, bytes)| (200, mime, bytes),
+                    |(mime, bytes)| {
+                        if entry.kind == "app" {
+                            let icon = format!("data:{mime};base64,{}", STANDARD.encode(&bytes));
+                            store_recent_icon(entry.id, Some(icon));
+                        }
+                        (200, mime, bytes)
+                    },
                 );
                 let _ = send(request, result.0, result.1, result.2, false);
             });

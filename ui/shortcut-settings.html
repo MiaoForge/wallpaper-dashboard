@@ -138,7 +138,8 @@ input:disabled { opacity: .54; }
 .recent-apps { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line); }
 .recent-apps p { margin-top: 6px; }
 .recent-apps ul { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 0; padding: 0; list-style: none; }
-.recent-apps li { max-width: 100%; padding: 3px 8px; border: 1px solid var(--line); border-radius: 7px; background: var(--control); overflow-wrap: anywhere; }
+.recent-apps li { display: grid; place-items: center; width: 32px; height: 32px; padding: 0; border: 1px solid var(--line); border-radius: 7px; background: var(--control); color: var(--muted); font-size: 11px; }
+.recent-apps li img { width: 20px; height: 20px; margin: 0; border-radius: 0; object-fit: contain; }
 .picker-count { margin-top: 9px; font-size: 12px; }
 .lane-empty p { margin: 0; }
 dialog { width: min(520px, calc(100% - 28px)); max-height: calc(100% - 26px); padding: 0; color: inherit; background: var(--surface); border: 1px solid var(--line); border-radius: 11px; box-shadow: 0 15px 45px #0005; }
@@ -552,15 +553,63 @@ let loaded = false;
 let saving = false;
 let pickerRow;
 let dirty = false;
+const recentIcons = new Map();
+let recentSignature;
+let loadingRecentIcons = false;
+
+async function loadRecentIcons() {
+  if (loadingRecentIcons || $("shortcuts").hidden || document.hidden) return;
+  loadingRecentIcons = true;
+  try {
+    for (const [id, tile] of [...recentIcons]) {
+      if ($("shortcuts").hidden || document.hidden) break;
+      if (recentIcons.get(id) !== tile || !tile.dataset.pending) continue;
+      try {
+        const response = await fetch(`/shortcuts/icon/${id}`, {
+          signal: AbortSignal.timeout(8000),
+        });
+        if (response.status === 429) break;
+        if (response.ok) {
+          const image = document.createElement("img");
+          const url = URL.createObjectURL(await response.blob());
+          image.alt = tile.title;
+          image.onload = () => { URL.revokeObjectURL(url); tile.replaceChildren(image); };
+          image.onerror = () => URL.revokeObjectURL(url);
+          image.src = url;
+        }
+      } catch { /* Keep the app's initials when its icon cannot be loaded. */ }
+      delete tile.dataset.pending;
+    }
+  } finally {
+    loadingRecentIcons = false;
+  }
+}
+
 function showRecentApps(ids) {
   const pinned = new Set(layout.apps.map(item => item.id));
-  const names = ids.filter(id => !pinned.has(id)).map(id => catalog.get(id)?.name).filter(Boolean);
+  const apps = ids.filter(id => !pinned.has(id)).map(id => catalog.get(id)).filter(Boolean);
   const list = $("recent-app-list");
   const empty = $("recent-app-empty");
-  list.replaceChildren(...names.map(name => element("li", name)));
-  list.hidden = names.length === 0;
-  empty.hidden = names.length > 0;
+  const signature = JSON.stringify(apps.map(app => app.id));
+  if (signature !== recentSignature) {
+    recentSignature = signature;
+    const previous = new Map(recentIcons);
+    recentIcons.clear();
+    list.replaceChildren(...apps.map(({id, name}) => {
+      const tile = previous.get(id) || element("li", Array.from(name.trim()).slice(0, 2).join("").toUpperCase());
+      if (!previous.has(id)) {
+        tile.title = name;
+        tile.setAttribute("aria-label", name);
+        tile.dataset.pending = "true";
+      }
+      recentIcons.set(id, tile);
+      return tile;
+    }));
+  }
+  list.hidden = apps.length === 0;
+  empty.hidden = apps.length > 0;
   empty.textContent = "暂无可补位的应用";
+  loadRecentIcons();
 }
 async function refreshRecentApps() {
   try {
