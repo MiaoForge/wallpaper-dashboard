@@ -1,0 +1,64 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+      - 'v[0-9]+.[0-9]+.[0-9]+-rc[0-9]+'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+
+jobs:
+  windows:
+    name: Publish Windows x64
+    if: github.event.deleted == false
+    runs-on: windows-2025
+    timeout-minutes: 25
+    env:
+      RELEASE_TAG: ${{ github.ref_name }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Validate the tag and release notes
+        run: |
+          if ($env:RELEASE_TAG -cnotmatch '\Av[0-9]+\.[0-9]+\.[0-9]+(?:-rc[0-9]+)?\z') {
+            throw "Unsupported release tag: $env:RELEASE_TAG"
+          }
+          $notes = "docs/release/release-note-$env:RELEASE_TAG.md"
+          if (!(Test-Path -LiteralPath $notes -PathType Leaf) -or
+              [string]::IsNullOrWhiteSpace((Get-Content -LiteralPath $notes -Raw))) {
+            throw "Missing or empty release notes: $notes"
+          }
+      - name: Select Rust stable
+        run: rustup default stable-x86_64-pc-windows-msvc
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: windows-x64-msvc
+          save-if: 'false'
+          cache-bin: 'false'
+      - name: Run tests
+        run: cargo test --locked --all-targets
+      - name: Build the release executable
+        run: cargo build --release --locked --bin wallpaper-dashboard
+      - name: Package the executable
+        run: |
+          $archive = "wallpaper-dashboard-$env:RELEASE_TAG-windows-x64.zip"
+          Compress-Archive -LiteralPath target/release/wallpaper-dashboard.exe -DestinationPath $archive
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tag = $env:RELEASE_TAG
+          $archive = "wallpaper-dashboard-$tag-windows-x64.zip"
+          $arguments = @(
+            "release", "create", $tag, $archive,
+            "--verify-tag", "--title", "Wallpaper Dashboard $tag",
+            "--notes-file", "docs/release/release-note-$tag.md"
+          )
+          if ($tag -cmatch '-rc[0-9]+\z') { $arguments += "--prerelease" }
+          gh @arguments

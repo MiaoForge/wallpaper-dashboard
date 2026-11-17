@@ -20,6 +20,8 @@ use windows_sys::{
     Win32::Foundation::LUID,
 };
 
+type EngineKey = (u32, u32, u32, u32);
+
 struct EngineQuery {
     query: PDH_HQUERY,
     counter: PDH_HCOUNTER,
@@ -71,7 +73,7 @@ impl EngineQuery {
         Ok(result)
     }
 
-    fn engines(&self) -> Result<HashMap<(u32, u32, u32, u32), f64>, Issue> {
+    fn engines(&self) -> Result<HashMap<EngineKey, f64>, Issue> {
         let mut bytes = 0;
         let mut count = 0;
         // The first call obtains the required size. An aligned buffer holds rows and names.
@@ -128,7 +130,7 @@ impl EngineQuery {
     }
 }
 
-fn engine_key(name: &str) -> Option<(u32, u32, u32, u32)> {
+fn engine_key(name: &str) -> Option<EngineKey> {
     let (_, suffix) = name.split_once("_luid_")?;
     let mut parts = suffix.split('_');
     let high = u32::from_str_radix(parts.next()?.strip_prefix("0x")?, 16).ok()?;

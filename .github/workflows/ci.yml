@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  windows:
+    name: Windows x64
+    runs-on: windows-2025
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Select Rust stable
+        run: |
+          rustup default stable-x86_64-pc-windows-msvc
+          rustup component add rustfmt clippy
+      - uses: Swatinem/rust-cache@v2
+        with:
+          shared-key: windows-x64-msvc
+          save-if: ${{ github.ref_name == github.event.repository.default_branch && github.ref_type == 'branch' }}
+          cache-bin: 'false'
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+      - name: Lint GitHub Actions workflows
+        run: go run github.com/rhysd/actionlint/cmd/actionlint@v1.7.12
+      - name: Run Clippy
+        run: cargo clippy --locked --all-targets -- -D warnings
+      - name: Run tests
+        run: cargo test --locked --all-targets
+      - name: Build the release executable
+        run: cargo build --release --locked --bin wallpaper-dashboard

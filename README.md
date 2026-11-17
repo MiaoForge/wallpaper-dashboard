@@ -20,3 +20,11 @@ collector is running, exit it before starting this build.
 
 See the [collector guide](docs/collector.md) for hardware requirements,
 optional FPS tracking, diagnostics, and the origin of the adapted panel UI.
+
+## Releases
+
+Add release notes in `docs/release/` and include them in the tagged commit.
+Pushing `vX.Y.Z` publishes a GitHub Release using `release-note-vX.Y.Z.md`.
+Pushing `vX.Y.Z-rcX` publishes a prerelease using
+`release-note-vX.Y.Z-rcX.md`. Each release includes a Windows x64 ZIP with
+`wallpaper-dashboard.exe`.
