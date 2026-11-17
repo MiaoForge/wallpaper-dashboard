@@ -14,6 +14,10 @@ use std::{
 };
 
 use serde::{Deserialize, Serialize};
+use windows_sys::Win32::{
+    Foundation::{CloseHandle, FILETIME},
+    System::Threading::{GetProcessTimes, OpenProcess, PROCESS_QUERY_LIMITED_INFORMATION},
+};
 
 use crate::telemetry::{Device, Issue, Status, unix_ms};
 
@@ -135,10 +139,23 @@ fn feed_path() -> io::Result<PathBuf> {
 }
 
 fn target_start(pid: u32) -> Option<u64> {
-    let pid = sysinfo::Pid::from_u32(pid);
-    let mut system = sysinfo::System::new().ok()?;
-    system.refresh_processes(sysinfo::ProcessesToUpdate::Some(&[pid]), true);
-    system.process(pid).map(sysinfo::Process::start_time)
+    let (mut created, mut exited, mut kernel, mut user) = (
+        FILETIME::default(),
+        FILETIME::default(),
+        FILETIME::default(),
+        FILETIME::default(),
+    );
+    // SAFETY: the output values are writable, and the process handle is closed here.
+    let ok = unsafe {
+        let process = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, 0, pid);
+        if process.is_null() {
+            return None;
+        }
+        let result = GetProcessTimes(process, &mut created, &mut exited, &mut kernel, &mut user);
+        CloseHandle(process);
+        result != 0
+    };
+    ok.then_some((u64::from(created.dwHighDateTime) << 32) | u64::from(created.dwLowDateTime))
 }
 
 pub fn track(presentmon: &Path, pid: u32) -> Result<(), Error> {
@@ -320,6 +337,7 @@ fn track_foreground(
     let mut shortcuts = Vec::new();
     let mut last_scan = None;
     let mut previous_error = String::new();
+    let mut last_target: Option<((u32, u64), bool)> = None;
     while !stop.load(Ordering::Acquire) {
         if last_scan
             .is_none_or(|time: std::time::Instant| time.elapsed() >= Duration::from_secs(30))
@@ -327,16 +345,28 @@ fn track_foreground(
             directories = crate::shortcuts::steam_game_directories();
             shortcuts = crate::shortcuts::windows_game_executables();
             last_scan = Some(std::time::Instant::now());
+            last_target = None;
         }
         let selected = foreground().and_then(|id| {
+            let identity = (id, target_start(id)?);
+            if let Some((cached, recognized)) = last_target
+                && cached == identity
+            {
+                return recognized.then_some(identity);
+            }
             let pid = sysinfo::Pid::from_u32(id);
             let mut system = sysinfo::System::new().ok()?;
-            system.refresh_processes(sysinfo::ProcessesToUpdate::Some(&[pid]), true);
+            system.refresh_processes_specifics(
+                sysinfo::ProcessesToUpdate::Some(&[pid]),
+                true,
+                sysinfo::ProcessRefreshKind::nothing().with_exe(sysinfo::UpdateKind::OnlyIfNotSet),
+            );
             let process = system.process(pid)?;
             let exe = process.exe()?;
             let recognized = inside_game(exe, &directories)
                 || shortcuts.iter().any(|path| path_key(path) == path_key(exe));
-            recognized.then_some((id, process.start_time()))
+            last_target = Some((identity, recognized));
+            recognized.then_some(identity)
         });
         let Some((pid, start)) = selected else {
             let _ = publish(None);

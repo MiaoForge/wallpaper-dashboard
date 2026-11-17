@@ -117,16 +117,16 @@ fn league_running() -> Option<bool> {
             .iter()
             .position(|&ch| ch == 0)
             .unwrap_or(entry.szExeFile.len());
-        let name = String::from_utf16_lossy(&entry.szExeFile[..end]);
+        let name = &entry.szExeFile[..end];
         let client = [
-            "LeagueClient.exe",
-            "LeagueClientUx.exe",
-            "League of Legends.exe",
+            b"LeagueClient.exe".as_slice(),
+            b"LeagueClientUx.exe",
+            b"League of Legends.exe",
         ]
         .iter()
-        .any(|target| name.eq_ignore_ascii_case(target));
+        .any(|target| exe_name_matches(name, target));
         if client
-            || (name.eq_ignore_ascii_case("launcher.exe")
+            || (exe_name_matches(name, b"launcher.exe")
                 && is_wegame_league_launcher(entry.th32ProcessID))
         {
             found = true;
@@ -136,6 +136,13 @@ fn league_running() -> Option<bool> {
     }
     unsafe { CloseHandle(snapshot) };
     first.then_some(found)
+}
+
+fn exe_name_matches(name: &[u16], target: &[u8]) -> bool {
+    name.len() == target.len()
+        && name.iter().zip(target).all(|(&wide, ascii)| {
+            u8::try_from(wide).is_ok_and(|byte| byte.eq_ignore_ascii_case(ascii))
+        })
 }
 
 fn is_wegame_league_launcher(pid: u32) -> bool {

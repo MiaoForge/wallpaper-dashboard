@@ -7,10 +7,13 @@ use std::{
 use crate::telemetry::{Device, Issue};
 use sysinfo::{Disks, MINIMUM_CPU_UPDATE_INTERVAL, Networks, System};
 
+const DISK_REFRESH_INTERVAL: Duration = Duration::from_secs(10);
+
 struct Sampler {
     system: System,
     networks: Result<Networks, sysinfo::Error>,
     network_sampled_at: Instant,
+    disks: Option<(Instant, Result<Disks, sysinfo::Error>)>,
 }
 
 impl Sampler {
@@ -24,6 +27,7 @@ impl Sampler {
             system,
             networks,
             network_sampled_at,
+            disks: None,
         })
     }
 }
@@ -126,9 +130,17 @@ impl Sampler {
             }
         }
         self.network_sampled_at = Instant::now();
-        match Disks::new_with_refreshed_list() {
+        if self
+            .disks
+            .as_ref()
+            .is_none_or(|(sampled_at, _)| sampled_at.elapsed() >= DISK_REFRESH_INTERVAL)
+        {
+            let disks = Disks::new_with_refreshed_list();
+            self.disks = Some((Instant::now(), disks));
+        }
+        match &self.disks.as_ref().expect("disks initialized").1 {
             Ok(disks) => {
-                for disk in &disks {
+                for disk in disks {
                     let name = disk.mount_point().to_string_lossy();
                     let mut device = Device::new(format!("volume:{name}"), name.as_ref(), "volume");
                     let label = disk.name().to_string_lossy();

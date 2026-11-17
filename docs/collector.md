@@ -55,6 +55,7 @@ are stored in the browser's local storage.
 
 The service binds exclusively to IPv4 loopback and exposes read-only
 snapshots. Windows, ADLX, and NVML sample every two seconds, MSI Center samples every second, and the Ryzen SDK samples every four seconds. Each worker updates independently.
+Windows disk capacity and free space refresh every ten seconds.
 The dashboard hides stale numbers until fresh snapshots arrive.
 
 ## Windows tray executable

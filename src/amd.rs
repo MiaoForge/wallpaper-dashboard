@@ -1,16 +1,19 @@
 use std::{
     env,
     io::{self, Read},
-    os::windows::process::CommandExt,
+    os::windows::{io::AsRawHandle, process::CommandExt},
     path::PathBuf,
     process::{Command, Output, Stdio},
     thread,
-    time::{Duration, Instant},
 };
 
 use adlx_lite::{
     AdlxHelper, ffi,
     interface::{Interface, InterfaceImpl},
+};
+use windows_sys::Win32::{
+    Foundation::{WAIT_FAILED, WAIT_OBJECT_0, WAIT_TIMEOUT},
+    System::Threading::WaitForSingleObject,
 };
 
 use crate::telemetry::{Device, Issue, Status};
@@ -347,23 +350,23 @@ fn read_pm_table(cli: PathBuf) -> io::Result<Output> {
             let mut bytes = Vec::new();
             stderr.read_to_end(&mut bytes).map(|_| bytes)
         });
-        let deadline = Instant::now() + Duration::from_secs(8);
-        let status = loop {
-            match child.try_wait() {
-                Ok(Some(status)) => break status,
-                Ok(None) if Instant::now() < deadline => thread::sleep(Duration::from_millis(50)),
-                result => {
-                    let _ = child.kill();
-                    let _ = child.wait();
-                    return Err(result.err().unwrap_or_else(|| {
-                        io::Error::new(
-                            io::ErrorKind::TimedOut,
-                            "AMD SDK did not respond within 8 seconds",
-                        )
-                    }));
-                }
-            }
+        // SAFETY: the child owns a live process handle for the duration of the wait.
+        let wait = unsafe { WaitForSingleObject(child.as_raw_handle(), 8_000) };
+        let status = match wait {
+            WAIT_OBJECT_0 => child.wait(),
+            WAIT_TIMEOUT => Err(io::Error::new(
+                io::ErrorKind::TimedOut,
+                "AMD SDK did not respond within 8 seconds",
+            )),
+            WAIT_FAILED => Err(io::Error::last_os_error()),
+            code => Err(io::Error::other(format!(
+                "unexpected AMD SDK wait result: {code}"
+            ))),
         };
+        let status = status.inspect_err(|_| {
+            let _ = child.kill();
+            let _ = child.wait();
+        })?;
         Ok(Output {
             status,
             stdout: read_out.join().expect("stdout reader panicked")?,
