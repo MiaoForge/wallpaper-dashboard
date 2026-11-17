@@ -23,6 +23,7 @@ struct SnapshotResponse<'a> {
     schema_version: u8,
     backends: &'a [Backend],
     weather_city: Option<String>,
+    network_interface: Option<String>,
     gpu_paused: bool,
     dock_revision: u64,
 }
@@ -287,6 +288,12 @@ fn respond(
     if request.url() == "/settings/startup" {
         return crate::settings::handle_startup(request);
     }
+    if request.url() == "/settings/exit" {
+        return crate::settings::handle_exit(request);
+    }
+    if request.url() == "/settings/network" {
+        return crate::settings::handle_network(request);
+    }
     if request.url() == "/settings/update" {
         return crate::updates::handle(request);
     }
@@ -342,6 +349,7 @@ fn respond(
                     schema_version: 1,
                     backends: &samples,
                     weather_city,
+                    network_interface: crate::settings::network_interface(),
                     gpu_paused: game_mode::active(),
                     dock_revision: crate::shortcut_http::dock_revision(),
                 })?

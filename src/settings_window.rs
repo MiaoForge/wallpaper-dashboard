@@ -20,8 +20,8 @@ use windows_sys::{
         UI::{
             Shell::ShellExecuteW,
             WindowsAndMessaging::{
-                FindWindowW, IsIconic, SW_RESTORE, SW_SHOWNORMAL, SetForegroundWindow,
-                ShowWindowAsync,
+                FindWindowW, IsIconic, PostMessageW, SW_RESTORE, SW_SHOWNORMAL,
+                SetForegroundWindow, ShowWindowAsync, WM_CLOSE,
             },
         },
     },
@@ -31,6 +31,21 @@ use wry::{NewWindowResponse, WebContext, WebViewBuilder, WebViewBuilderExtWindow
 
 const CLASS_NAME: &str = "WallpaperDashboardSettingsWindow";
 const SETTINGS_URL: &str = "http://127.0.0.1:8766/settings";
+
+pub(super) fn close() -> io::Result<bool> {
+    let class: Vec<_> = CLASS_NAME.encode_utf16().chain([0]).collect();
+    // SAFETY: the class name is terminated; WM_CLOSE requests normal window shutdown.
+    unsafe {
+        let window = FindWindowW(class.as_ptr(), ptr::null());
+        if window.is_null() {
+            return Ok(false);
+        }
+        if PostMessageW(window, WM_CLOSE, 0, 0) == 0 {
+            return Err(io::Error::last_os_error());
+        }
+    }
+    Ok(true)
+}
 
 fn focus_existing(class_name: &str) {
     let class: Vec<_> = class_name.encode_utf16().chain([0]).collect();

@@ -50,6 +50,8 @@ pub struct Device {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub volume_label: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub network_type: Option<&'static str>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub connection: Option<&'static str>,
     pub sensors: Vec<Sensor>,
 }
@@ -61,6 +63,7 @@ impl Device {
             name: name.into(),
             kind,
             volume_label: None,
+            network_type: None,
             connection: None,
             sensors: Vec::new(),
         }

@@ -45,9 +45,15 @@ window.readRustWallpaperSnapshot = async function () {
       ["TGPU1MEM", gpu, "memory_temperature"], ["SMEMUTI", memory, "usage"],
       ["SRTSSFPS", frames, "fps"], ["SRTSSFPS1L", frames, "fps_1_percent_low"], ["SFRAMETIME", frames, "frame_time"],
     ]) put(id, reading(device, field));
-    const rates = (windows?.devices ?? []).filter(device => device.kind === "network")
+    const selectedInterface = snapshot.network_interface;
+    const adapters = (windows?.devices ?? []).filter(device => device.kind === "network");
+    const rates = kind => adapters.filter(device => device.network_type === kind)
       .map(device => reading(device, "receive_rate")).filter(Number.isFinite);
-    if (rates.length) put("SNIC1DLRATE", Math.max(...rates) / 1024);
+    const wifi = selectedInterface ? [] : rates("wifi");
+    const selectedRates = selectedInterface
+      ? [reading(adapters.find(device => device.id === selectedInterface), "receive_rate")].filter(Number.isFinite)
+      : wifi.length ? wifi : rates("ethernet");
+    if (selectedRates.length) put("SNIC1DLRATE", Math.max(...selectedRates) / 1024);
     const units = 1024 ** 3;
     const volumes = (windows?.devices ?? []).filter(device => device.kind === "volume").flatMap(volume => {
       const letter = /^[A-Z]:/i.exec(volume.name)?.[0].toUpperCase();

@@ -85,7 +85,8 @@ fn run() -> Result<(), Error> {
         GetCurrentThreadId()
     };
 
-    thread::scope(|scope| {
+    let mut requested_exit = false;
+    let result = thread::scope(|scope| {
         let worker = scope.spawn(|| {
             let result = collector.serve(&stop);
             // SAFETY: The ID is from the main thread and remains live until join.
@@ -96,6 +97,7 @@ fn run() -> Result<(), Error> {
             // SAFETY: msg points to writable storage and this thread owns the queue.
             let status = unsafe { GetMessageW(&mut msg, ptr::null_mut(), 0, 0) };
             if status <= 0 || msg.message == SERVICE_STOPPED {
+                requested_exit = status == 0;
                 break;
             }
             // SAFETY: The message was retrieved from this thread's queue.
@@ -105,6 +107,7 @@ fn run() -> Result<(), Error> {
             }
             for event in MenuEvent::receiver().try_iter() {
                 if event.id == *quit.id() {
+                    requested_exit = true;
                     break 'messages;
                 }
                 if event.id == *game_mode.id() {
@@ -118,7 +121,7 @@ fn run() -> Result<(), Error> {
                 } else {
                     continue;
                 };
-                thread::spawn(move || {
+                scope.spawn(move || {
                     if let Err(error) = open() {
                         collector_log::record(&format!("could not open window: {error}"));
                         show_error("无法打开仪表盘窗口。");
@@ -128,7 +131,21 @@ fn run() -> Result<(), Error> {
         }
         stop.store(true, Ordering::Release);
         worker.join().map_err(|_| "collector thread panicked")?
-    })
+    });
+    if requested_exit && sensor_probe::settings::close_windows_on_exit() {
+        for (name, close) in [
+            (
+                "desktop panel",
+                panel_window::close as fn() -> std::io::Result<bool>,
+            ),
+            ("settings window", settings_window::close),
+        ] {
+            if let Err(error) = close() {
+                collector_log::record(&format!("could not close {name}: {error}"));
+            }
+        }
+    }
+    result
 }
 
 fn main() {

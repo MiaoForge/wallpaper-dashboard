@@ -1,19 +1,59 @@
 use std::{
     cell::RefCell,
-    thread,
+    collections::HashMap,
+    ffi::OsString,
+    os::windows::ffi::OsStringExt,
+    ptr, thread,
     time::{Duration, Instant},
 };
 
 use crate::telemetry::{Device, Issue};
 use sysinfo::{Disks, MINIMUM_CPU_UPDATE_INTERVAL, Networks, System};
+use windows_sys::Win32::NetworkManagement::IpHelper::{
+    FreeMibTable, GetIfTable2Ex, IF_TYPE_ETHERNET_CSMACD, IF_TYPE_IEEE80211, MIB_IF_ROW2,
+    MibIfTableNormalWithoutStatistics,
+};
 
 const DISK_REFRESH_INTERVAL: Duration = Duration::from_secs(10);
+
+fn network_types() -> HashMap<OsString, &'static str> {
+    let mut table = ptr::null_mut();
+    let mut types = HashMap::new();
+    // SAFETY: Windows fills the out-pointer with a table it owns until FreeMibTable.
+    unsafe {
+        if GetIfTable2Ex(MibIfTableNormalWithoutStatistics, &mut table) != 0 || table.is_null() {
+            return types;
+        }
+        let rows = ptr::addr_of!((*table).Table).cast::<MIB_IF_ROW2>();
+        for index in 0..(*table).NumEntries as usize {
+            let row = &*rows.add(index);
+            // HardwareInterface is the least significant bit in the Win32 structure.
+            if row.InterfaceAndOperStatusFlags._bitfield & 1 == 0 {
+                continue;
+            }
+            let kind = match row.Type {
+                IF_TYPE_IEEE80211 => "wifi",
+                IF_TYPE_ETHERNET_CSMACD => "ethernet",
+                _ => continue,
+            };
+            let length = row
+                .Alias
+                .iter()
+                .position(|&ch| ch == 0)
+                .unwrap_or(row.Alias.len());
+            types.insert(OsString::from_wide(&row.Alias[..length]), kind);
+        }
+        FreeMibTable(table.cast());
+    }
+    types
+}
 
 struct Sampler {
     system: System,
     networks: Result<Networks, sysinfo::Error>,
     network_sampled_at: Instant,
     disks: Option<(Instant, Result<Disks, sysinfo::Error>)>,
+    network_types: HashMap<OsString, &'static str>,
 }
 
 impl Sampler {
@@ -28,6 +68,7 @@ impl Sampler {
             networks,
             network_sampled_at,
             disks: None,
+            network_types: HashMap::new(),
         })
     }
 }
@@ -90,6 +131,13 @@ impl Sampler {
         }
         let mut devices = vec![cpu, ram];
 
+        let refresh_metadata = self
+            .disks
+            .as_ref()
+            .is_none_or(|(sampled_at, _)| sampled_at.elapsed() >= DISK_REFRESH_INTERVAL);
+        if refresh_metadata {
+            self.network_types = network_types();
+        }
         let needs_network_baseline = self.networks.is_err();
         if needs_network_baseline {
             self.networks = Networks::new_with_refreshed_list();
@@ -99,9 +147,11 @@ impl Sampler {
                 networks.refresh(true);
                 let elapsed = self.network_sampled_at.elapsed().as_secs_f64();
                 for (name, network) in &*networks {
+                    let network_type = self.network_types.get(name).copied();
                     let name = name.to_string_lossy();
                     let mut device =
                         Device::new(format!("network:{name}"), name.as_ref(), "network");
+                    device.network_type = network_type;
                     device.add(
                         "receive_rate",
                         "Receive rate",
@@ -130,11 +180,7 @@ impl Sampler {
             }
         }
         self.network_sampled_at = Instant::now();
-        if self
-            .disks
-            .as_ref()
-            .is_none_or(|(sampled_at, _)| sampled_at.elapsed() >= DISK_REFRESH_INTERVAL)
-        {
+        if refresh_metadata {
             let disks = Disks::new_with_refreshed_list();
             self.disks = Some((Instant::now(), disks));
         }

@@ -770,7 +770,7 @@ function applyData(d) {
   setText("ft-hw", d.frame, 1);
 
   // 下载速度：固定 1 位小数，单位由 HTML 单独排版，位置不会跳
-  const netText = Number.isFinite(Number(d.net)) ? Number(d.net).toFixed(1) : "0.0";
+  const netText = Number.isFinite(d.net) ? d.net.toFixed(1) : "--";
   setRaw("netval", netText);
   setRaw("netval-hw", netText);
 
@@ -898,16 +898,10 @@ function fromSensors(sensors, wlan, disks = []) {
   const hz = pick(sensors, "SVREFRATE");
   const fanIds = pickFans(sensors);
 
-  // 下载速度：取所有网卡 DLRATE 的最大值。
-  // 不能按「SNIC{i}CONNSPD > 0 的第一张」来选 —— CONNSPD 是链路协商速率，
-  // 不代表这张卡在用：虚拟网卡 / 蓝牙 PAN / Hyper-V vEthernet 也会有协商速率
-  // （实测本机 NIC1 = 3 Mbps、DLRATE 恒 0，却因为编号靠前把真实网卡 NIC3
-  // 的流量顶掉了，网速永远显示 0.0）。取最大值天然偏向真有流量的那张，
-  // 空闲卡的 0 不会赢。
-  let nic = 0;
+  let nic = null;
   for (let i = 1; i <= 8; i++) {
     const n = numeric(sensors, `SNIC${i}DLRATE`);
-    if (n != null && n > nic) nic = n;
+    if (n != null && (nic === null || n > nic)) nic = n;
   }
 
   // Windows peripheral battery snapshot
@@ -940,7 +934,7 @@ function fromSensors(sensors, wlan, disks = []) {
     frame: pick(sensors, "SFRAMETIME"),
     res: raw(sensors, "SDESKRES") || `${screen.width} x ${screen.height}`,
     hz: hz == null ? null : `${Math.round(hz)} Hz`,
-    net: nic / 1024,   // 只存数字，格式化交给 applyData（固定 1 位小数）
+    net: nic === null ? null : nic / 1024,
     devices,
     fans: fanIds.map((id) => (id ? pick(sensors, id) : null)),
     fanIds,

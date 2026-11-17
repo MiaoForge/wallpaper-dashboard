@@ -11,7 +11,7 @@ pub mod nvidia;
 mod panel_assets;
 mod recent_apps;
 pub mod service;
-mod settings;
+pub mod settings;
 mod shortcut_http;
 pub mod shortcuts;
 pub mod telemetry;

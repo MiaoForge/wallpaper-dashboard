@@ -224,7 +224,7 @@ fn desktop_host() -> io::Result<HWND> {
     Err(io::Error::other("找不到 Windows 桌面层"))
 }
 
-pub(super) fn toggle() -> Result<(), super::Error> {
+pub(super) fn close() -> io::Result<bool> {
     let parent = desktop_host()?;
     let class: Vec<_> = CLASS_NAME.encode_utf16().chain([0]).collect();
     // SAFETY: class is terminated, and WM_CLOSE requests a normal shutdown.
@@ -232,12 +232,16 @@ pub(super) fn toggle() -> Result<(), super::Error> {
         let panel = FindWindowExW(parent, ptr::null_mut(), class.as_ptr(), ptr::null());
         if !panel.is_null() {
             if PostMessageW(panel, WM_CLOSE, 0, 0) == 0 {
-                return Err(io::Error::last_os_error().into());
+                return Err(io::Error::last_os_error());
             }
-            return Ok(());
+            return Ok(true);
         }
     }
-    run()
+    Ok(false)
+}
+
+pub(super) fn toggle() -> Result<(), super::Error> {
+    if close()? { Ok(()) } else { run() }
 }
 
 #[derive(Deserialize)]

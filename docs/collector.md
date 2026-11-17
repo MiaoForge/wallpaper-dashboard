@@ -56,6 +56,9 @@ are stored in the browser's local storage.
 The service binds exclusively to IPv4 loopback and exposes read-only
 snapshots. Windows, ADLX, and NVML sample every two seconds, MSI Center samples every second, and the Ryzen SDK samples every four seconds. Each worker updates independently.
 Windows disk capacity and free space refresh every ten seconds.
+Choose the network adapter for the desktop panel under **采集状态 → 网络**.
+Automatic mode prefers a physical Wi-Fi adapter, then a physical Ethernet adapter.
+Other adapters can be selected manually.
 The dashboard hides stale numbers until fresh snapshots arrive.
 
 ## Windows tray executable
@@ -72,7 +75,9 @@ It uses the Microsoft Edge WebView2 Runtime and runs as the desktop user,
 even when the collector runs as administrator. Closing it leaves collection
 running. The same page is also available at http://127.0.0.1:8766/settings.
 The page includes weather, live collector status and the shortcut manager.
-The notification-area menu has an **退出采集器** item. Exit any existing collector
+The notification-area menu has an **退出采集器** item. It closes the desktop panel
+and settings window by default. To keep those windows open, turn off
+**退出采集器时关闭面板和设置窗口** under **常规**. Exit any existing collector
 before launching another instance. For AMD CPU temperatures and MSI motherboard
 fans, right-click the executable and choose **Run as administrator**.
 

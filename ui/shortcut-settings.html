@@ -36,9 +36,9 @@
 }
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
-body { margin: 0; min-height: 100vh; padding: clamp(18px, 6vw, 76px) 20px; background: var(--wallpaper) fixed; }
-.shell { display: grid; grid-template-columns: 185px minmax(0, 1fr); width: min(100%, 920px); min-height: min(590px, calc(100vh - 40px)); margin: auto; border: 1px solid var(--rim); border-radius: 22px; overflow: hidden; background: var(--canvas); box-shadow: 0 24px 64px #1515193d; }
-.sidebar { background: var(--sidebar); border-right: 1px solid var(--line); padding: 20px 12px; backdrop-filter: blur(20px); }
+body { --outer-padding: clamp(18px, 6vw, 76px); margin: 0; min-height: 100vh; padding: var(--outer-padding) 20px; background: var(--wallpaper) fixed; }
+.shell { display: grid; grid-template-columns: 185px minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); width: min(100%, 920px); height: min(520px, calc(100dvh - 2 * var(--outer-padding))); margin: auto; border: 1px solid var(--rim); border-radius: 22px; overflow: hidden; background: var(--canvas); box-shadow: 0 24px 64px #1515193d; }
+.sidebar { overflow: auto; background: var(--sidebar); border-right: 1px solid var(--line); padding: 20px 12px; backdrop-filter: blur(20px); }
 .brand { display: flex; align-items: center; gap: 10px; margin: 0 5px 24px; color: inherit; font-size: 14px; font-weight: 700; white-space: nowrap; }
 .brand-mark { display: grid; place-items: center; flex: 0 0 29px; height: 29px; border: 1px solid var(--rim); border-radius: 8px; color: var(--accent-ink); background: var(--accent); box-shadow: var(--shadow); font-size: 19px; }
 nav { display: grid; gap: 4px; }
@@ -46,12 +46,13 @@ nav a { display: flex; align-items: center; gap: 8px; min-height: 40px; color: v
 nav a:hover { background: var(--hover); }
 nav a[aria-current="page"] { color: var(--accent-text); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--rim); }
 .nav-icon { display: grid; place-items: center; flex: 0 0 22px; height: 22px; font: 17px/1 "Segoe UI Symbol", sans-serif; }
-main { min-width: 0; }
+main { min-width: 0; min-height: 0; overflow: auto; scrollbar-gutter: stable; }
 h1, h2, p { margin: 0; }
 h1 { font-size: 25px; font-weight: 700; line-height: 1.2; }
 h2 { font-size: 14px; font-weight: 650; }
 p, .count { color: var(--muted); }
 .page-heading { display: flex; align-items: center; min-height: 68px; padding: 15px 24px; border-bottom: 1px solid var(--line); background: var(--sidebar); backdrop-filter: blur(22px); }
+main > section > .page-heading { position: sticky; top: 0; z-index: 1; }
 .panel-body { padding: 20px 24px 24px; }
 .section-heading, .toolbar, .actions { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
 .section-heading { justify-content: space-between; }
@@ -59,6 +60,8 @@ p, .count { color: var(--muted); }
 .card + .card { margin-top: 14px; }
 .toolbar > input { flex: 1; min-width: 0; }
 button, select, input:not([type="radio"], [type="checkbox"]) { min-height: 34px; font: inherit; color: inherit; border: 1px solid var(--line); background: var(--control); padding: 5px 11px; border-radius: 8px; }
+select { color-scheme: light; }
+select option { color: var(--accent-text); background-color: var(--surface); }
 button { cursor: pointer; box-shadow: 0 1px 1px #15162114; }
 button:disabled { opacity: .45; cursor: default; }
 button:hover:not(:disabled) { background: var(--accent-soft); }
@@ -79,11 +82,11 @@ input:disabled { opacity: .54; }
 .update-download:hover { background: var(--accent-hover); }
 #update-status { margin-top: 8px; }
 @media (max-width: 480px) { .update-row { flex-wrap: wrap; } .update-actions { justify-content: flex-start; } }
-#startup-enabled { appearance: none; display: block; flex: 0 0 39px; width: 39px; height: 23px; margin: 0; padding: 3px; border: 0; border-radius: 999px; background: var(--muted); cursor: pointer; }
-#startup-enabled::before { content: ""; display: block; width: 17px; height: 17px; border-radius: 50%; background: white; }
-#startup-enabled:checked { background: var(--accent); }
-#startup-enabled:checked::before { transform: translateX(16px); }
-#startup-enabled:disabled { cursor: default; }
+.setting-switch { appearance: none; display: block; flex: 0 0 39px; width: 39px; height: 23px; margin: 0; padding: 3px; border: 0; border-radius: 999px; background: var(--muted); cursor: pointer; }
+.setting-switch::before { content: ""; display: block; width: 17px; height: 17px; border-radius: 50%; background: white; }
+.setting-switch:checked { background: var(--accent); }
+.setting-switch:checked::before { background: var(--accent-ink); transform: translateX(16px); }
+.setting-switch:disabled { cursor: default; }
 .weather-mode { min-width: 0; margin: 0; }
 #weather-form .toolbar { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line); }
 #weather-result, #weather-status { margin-top: 12px; }
@@ -96,14 +99,20 @@ input:disabled { opacity: .54; }
 .readings { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 16px; margin: 5px 0 14px; }
 .readings dt { color: var(--muted); overflow-wrap: anywhere; }
 .readings dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; }
-.rows { margin-top: 14px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
-.rows .card { margin: 0; }
-.rows p, #status { margin-top: 10px; }
+.shortcut-lanes .card > p, #status { margin-top: 10px; }
 .overview { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 12px; }
 .overview > .metric-card { min-width: 0; margin: 0; backdrop-filter: blur(16px); }
 .metric-group { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 12px; }
 .metric-group > .card { margin: 0; }
 .metric-group > .card:last-child { grid-column: 1 / -1; }
+.network-card { margin-top: 12px; min-width: 0; }
+.network-card select { max-width: 100%; }
+#network-status { margin-top: 6px; }
+.network-table { width: 100%; margin-top: 8px; border-collapse: collapse; table-layout: fixed; font-variant-numeric: tabular-nums; }
+.network-table th, .network-table td { padding: 4px 0; border-top: 1px solid var(--line); text-align: right; }
+.network-table th:first-child { width: 50%; padding-right: 8px; text-align: left; overflow-wrap: anywhere; }
+.network-table th { color: var(--muted); font-weight: 500; }
+.network-table td { white-space: nowrap; }
 .metric-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 6px; }
 .metric-value { display: block; font-size: 22px; line-height: 1.2; font-weight: 680; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .metric-value:empty { display: none; }
@@ -121,9 +130,7 @@ input:disabled { opacity: .54; }
 .disk-usage ul { display: flex; flex-wrap: wrap; gap: 4px; margin: 4px 0 0; padding: 0; list-style: none; }
 .disk-usage li { padding: 2px 5px; border: 0; border-radius: 5px; background: var(--hover); font-size: 11px; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .disk-usage p { margin-top: 4px; font-size: 12px; }
-.shortcut-lanes { margin-top: 0; }
-.shortcut-lanes ol { margin-top: 9px; }
-.shortcut-lanes ol { padding: 0; list-style: none; }
+.shortcut-lanes ol { margin-top: 9px; padding: 0; list-style: none; }
 .shortcut-entry { display: grid; grid-template-columns: 32px minmax(0, 1fr) auto; align-items: center; gap: 8px; min-height: 48px; }
 .shortcut-entry img { width: 32px; height: 32px; margin: 0; object-fit: contain; }
 .shortcut-entry > span { overflow-wrap: anywhere; }
@@ -156,20 +163,19 @@ li button { min-height: 30px; padding: 3px 7px; font-size: 12px; }
 .count { font-size: 12px; font-weight: 400; }
 @media (max-width: 650px) {
   body { padding: 0; }
-  .shell { grid-template-columns: 1fr; }
-  .shell { border: 0; border-radius: 0; box-shadow: none; min-height: 100vh; align-content: start; }
+  .shell { grid-template-columns: 1fr; grid-template-rows: auto minmax(0, 1fr); height: 100dvh; border: 0; border-radius: 0; box-shadow: none; }
   .sidebar { padding: 9px 12px; border-right: 0; border-bottom: 1px solid var(--line); }
   .brand { margin: 0 0 5px; }
   nav { display: flex; flex-wrap: wrap; }
   .page-heading, .panel-body { padding-inline: 14px; }
   .page-heading { min-height: 58px; }
   h1 { font-size: 21px; }
-  .rows { grid-template-columns: 1fr; }
 }
 @media (max-width: 760px) { .overview { grid-template-columns: repeat(2,minmax(0,1fr)); } }
 @media (max-width: 420px) { .overview, .metric-group { grid-template-columns: 1fr; } }
 @media (max-width: 360px) { .setting-row { flex-wrap: wrap; } }
 @media (prefers-color-scheme: dark) {
+  select { color-scheme: dark; }
   :root {
     color: #f4f4f5;
     background: #232427;
@@ -199,12 +205,7 @@ li button { min-height: 30px; padding: 3px 7px; font-size: 12px; }
   }
 }
 .desktop-window body { padding: 0; }
-.desktop-window .shell { width: 100%; height: 100vh; min-height: 0; border: 0; border-radius: 0; box-shadow: none; }
-.desktop-window main { overflow: auto; }
-.desktop-window .page-heading { position: sticky; top: 0; z-index: 1; }
-@media (max-width: 650px) {
-  .desktop-window .shell { grid-template-rows: auto minmax(0, 1fr); align-content: stretch; }
-}
+.desktop-window .shell { width: 100%; height: 100dvh; border: 0; border-radius: 0; box-shadow: none; }
 </style>
 <div class="shell">
 <aside class="sidebar">
@@ -222,7 +223,12 @@ li button { min-height: 30px; padding: 3px 7px; font-size: 12px; }
   <div class="panel-body"><div class="card setting-row">
     <div><h2><label for="startup-enabled">登录 Windows 时启动采集器</label></h2>
     <p id="startup-status" role="status">正在读取自启设置…</p></div>
-    <input id="startup-enabled" type="checkbox" role="switch" aria-describedby="startup-status" disabled>
+    <input class="setting-switch" id="startup-enabled" type="checkbox" role="switch" aria-describedby="startup-status" disabled>
+  </div>
+  <div class="card setting-row">
+    <div><h2><label for="close-on-exit">退出采集器时关闭面板和设置窗口</label></h2>
+    <p id="exit-status" role="status">取消勾选后，退出采集器仍会保留这两个窗口。</p></div>
+    <input class="setting-switch" id="close-on-exit" type="checkbox" role="switch" aria-describedby="exit-status" checked disabled>
   </div>
   <section class="card">
     <div class="setting-row update-row">
@@ -259,13 +265,21 @@ li button { min-height: 30px; padding: 3px 7px; font-size: 12px; }
   <div class="panel-body">
     <p class="collection-notice" id="collection-notice" role="status" hidden></p>
     <div class="overview" id="overview" role="group" aria-label="实时使用率"></div>
+    <section class="card network-card">
+      <div class="section-heading">
+        <h2>网络</h2>
+        <div class="actions"><label for="panel-network">副屏显示网卡</label><select id="panel-network" disabled><option value="">自动选择</option></select></div>
+      </div>
+      <p id="network-status" role="status" hidden></p>
+      <div id="network-readings"></div>
+    </section>
     <div class="metric-group" id="collection-details" role="group" aria-label="游戏、风扇和设备"></div>
   </div>
 </section>
 <section id="shortcuts">
   <header class="page-heading section-heading"><h1>应用和游戏</h1><button class="primary" id="save" disabled>保存布局</button></header>
   <div class="panel-body">
-  <div class="rows shortcut-lanes">
+  <div class="shortcut-lanes">
     <section class="card"><div class="section-heading"><h2>应用栏 <span class="count" id="apps-count"></span></h2><button id="choose-apps" disabled>固定应用</button></div><ol id="apps"></ol><div class="lane-empty" id="apps-empty"><p>没有固定应用</p></div><div class="recent-apps"><h2 id="recent-app-heading">最近使用</h2><ul id="recent-app-list" aria-labelledby="recent-app-heading" hidden></ul><p id="recent-app-empty">暂无记录</p></div></section>
     <section class="card"><div class="section-heading"><h2>游戏栏 <span class="count" id="games-count"></span></h2><button id="choose-games" disabled>固定游戏</button></div><ol id="games"></ol><div class="lane-empty" id="games-empty"><p>没有固定游戏</p></div><p>空位显示最近玩的 Steam 游戏</p></section>
   </div>
@@ -297,6 +311,7 @@ function showPanel() {
     if (panel === selected) link.setAttribute("aria-current", "page");
     else link.removeAttribute("aria-current");
   }
+  document.querySelector("main").scrollTop = 0;
 }
 window.addEventListener("hashchange", showPanel);
 showPanel();
@@ -359,6 +374,30 @@ $("startup-enabled").onchange = async event => {
   } finally { control.disabled = false; }
 };
 
+const closeOnExit = $("close-on-exit");
+const exitStatus = $("exit-status");
+const exitHint = exitStatus.textContent;
+jsonRequest("/settings/exit").then(({close_windows}) => {
+  closeOnExit.checked = close_windows;
+  closeOnExit.disabled = false;
+}).catch(() => { exitStatus.textContent = "暂时无法读取退出设置"; });
+closeOnExit.onchange = async () => {
+  const enabled = closeOnExit.checked;
+  closeOnExit.disabled = true;
+  try {
+    const {close_windows} = await jsonRequest("/settings/exit", {
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({close_windows:enabled}),
+    });
+    closeOnExit.checked = close_windows;
+    exitStatus.textContent = exitHint;
+  } catch (error) {
+    closeOnExit.checked = !enabled;
+    exitStatus.textContent = error.message;
+  } finally { closeOnExit.disabled = false; }
+};
+
 const showWeather = data => {
   $("city").value = data.city;
   $("weather-auto").checked = !data.city;
@@ -413,6 +452,91 @@ function metric(device, id) {
 }
 function metricText(sensor, digits = 0) {
   return sensor ? `${sensor.value.toLocaleString(undefined, {maximumFractionDigits:digits})}${sensor.unit === "%" ? "" : " "}${sensor.unit}`.trim() : "—";
+}
+function networkRate(sensor) {
+  if (!sensor) return "—";
+  const rate = sensor.value;
+  if (rate < 1024) return `${Math.round(rate)} B/s`;
+  if (rate < 1024 ** 2) return `${(rate / 1024).toFixed(1)} KiB/s`;
+  return `${(rate / 1024 ** 2).toFixed(1)} MiB/s`;
+}
+
+const networkSelect = $("panel-network");
+let selectedNetwork = "";
+let networkOptions;
+let savingNetwork = false;
+let networkSettingsAvailable = false;
+
+networkSelect.onchange = async () => {
+  const value = networkSelect.value;
+  const status = $("network-status");
+  status.hidden = true;
+  savingNetwork = true;
+  networkSelect.disabled = true;
+  try {
+    const result = await jsonRequest("/settings/network", {
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({interface:value || null}),
+    });
+    selectedNetwork = result.interface ?? "";
+  } catch (error) {
+    networkSelect.value = selectedNetwork;
+    status.textContent = error.message;
+    status.hidden = false;
+  } finally {
+    savingNetwork = false;
+    networkSelect.disabled = !networkSettingsAvailable;
+  }
+};
+
+function renderNetwork(devices, preference) {
+  networkSettingsAvailable = preference !== undefined;
+  if (!savingNetwork) {
+    if (networkSettingsAvailable) selectedNetwork = preference ?? "";
+    const options = devices.filter(device => device.id !== "network:system")
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .map(({id, name}) => [id, name]);
+    if (selectedNetwork && !options.some(([id]) => id === selectedNetwork)) {
+      options.push([selectedNetwork, `${selectedNetwork.slice("network:".length)}（不可用）`]);
+    }
+    const signature = JSON.stringify(options);
+    if (signature !== networkOptions) {
+      networkOptions = signature;
+      networkSelect.replaceChildren(new Option("自动选择", ""), ...options.map(([id, name]) => new Option(name, id)));
+    }
+    if (networkSelect.value !== selectedNetwork) networkSelect.value = selectedNetwork;
+  }
+  networkSelect.disabled = savingNetwork || !networkSettingsAvailable;
+
+  const readings = $("network-readings");
+  const rows = devices.map(device => ({
+    name: device.name,
+    download: metric(device, "receive_rate"),
+    upload: metric(device, "transmit_rate"),
+  })).filter(row => row.download || row.upload)
+    .sort((a, b) => a.name.localeCompare(b.name));
+  if (!rows.length) {
+    const empty = element("p", "暂无网络读数");
+    empty.className = "metric-label";
+    readings.replaceChildren(empty);
+    return;
+  }
+  const table = element("table", "");
+  table.className = "network-table";
+  table.setAttribute("aria-label", "各网卡的实时传输速率");
+  const heading = table.createTHead().insertRow();
+  for (const label of ["网卡", "下载", "上传"]) {
+    const column = element("th", label);
+    column.scope = "col";
+    heading.append(column);
+  }
+  const body = table.createTBody();
+  for (const {name, download, upload} of rows) {
+    const label = element("th", name);
+    label.scope = "row";
+    body.insertRow().append(label, element("td", networkRate(download)), element("td", networkRate(upload)));
+  }
+  readings.replaceChildren(table);
 }
 function diskUsage(volumes) {
   const section = element("section", "");
@@ -478,7 +602,7 @@ function overviewCard(title, subtitle, value, rows, usage) {
   }
   return card;
 }
-function renderOverview(backends = []) {
+function renderOverview(backends = [], networkPreference) {
   const source = id => backends.find(item => item.source === id);
   const devices = (id, kind) => {
     const backend = source(id);
@@ -506,6 +630,7 @@ function renderOverview(backends = []) {
   const cpuUsage = metric(cpu, "usage");
   const gpuUsage = metric(gpu, "usage");
   const memoryUsage = metric(devices("windows", "memory")[0], "usage");
+  renderNetwork(devices("windows", "network"), networkPreference);
   const memoryCard = overviewCard("内存", memoryUsage ? "使用率" : "暂无内存读数", metricText(memoryUsage), [], memoryUsage ?? null);
   memoryCard.append(diskUsage(devices("windows", "volume")));
   $("overview").replaceChildren(
@@ -531,7 +656,7 @@ async function refreshCollection() {
   try {
     if ($("collection").hidden || document.hidden) return;
     const snapshot = await jsonRequest("/snapshots");
-    renderOverview(snapshot.backends);
+    renderOverview(snapshot.backends, snapshot.network_interface ?? null);
     const denied = snapshot.backends.filter(source => source.status === "permission_denied");
     const names = denied.map(source => sourceNames[source.source] || source.source).join("、");
     updateCollectionStatus("connected", "已连接", names ? `${names}权限不足，请以管理员身份启动托盘采集器。` : "");

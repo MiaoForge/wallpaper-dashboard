@@ -1,4 +1,10 @@
-use std::{fs, io, os::windows::process::CommandExt, process::Command, sync::Mutex, thread};
+use std::{
+    fs, io,
+    os::windows::process::CommandExt,
+    process::Command,
+    sync::{Mutex, OnceLock},
+    thread,
+};
 
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -9,6 +15,126 @@ use crate::{
     shortcut_http::{SAME_ORIGIN, json_response, read_body},
     shortcuts::{state_file, write_atomic},
 };
+
+#[derive(Default, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+struct NetworkSettings {
+    interface: Option<String>,
+}
+
+fn network_settings() -> &'static Mutex<NetworkSettings> {
+    static NETWORK: OnceLock<Mutex<NetworkSettings>> = OnceLock::new();
+    NETWORK.get_or_init(|| {
+        let settings = state_file("network-settings.json")
+            .ok()
+            .and_then(|file| fs::read(file).ok())
+            .and_then(|body| serde_json::from_slice(&body).ok())
+            .unwrap_or_default();
+        Mutex::new(settings)
+    })
+}
+
+pub(crate) fn network_interface() -> Option<String> {
+    network_settings()
+        .lock()
+        .expect("network settings lock poisoned")
+        .interface
+        .clone()
+}
+
+pub(crate) fn handle_network(mut request: Request) -> io::Result<()> {
+    if *request.method() != Method::Post
+        || header(&request, "Origin").as_deref() != Some(SAME_ORIGIN)
+        || header(&request, "Content-Type").as_deref() != Some("application/json")
+    {
+        return request.respond(Response::empty(403));
+    }
+    let Some(settings) = read_body::<NetworkSettings>(&mut request, 4096).filter(|settings| {
+        settings.interface.as_deref().is_none_or(|id| {
+            id.len() <= 512
+                && !id.chars().any(char::is_control)
+                && id
+                    .strip_prefix("network:")
+                    .is_some_and(|name| !name.trim().is_empty())
+        })
+    }) else {
+        return json_response(request, 400, json!({"error":"网卡选择无效"}), false);
+    };
+    let mut current = network_settings()
+        .lock()
+        .expect("network settings lock poisoned");
+    match write_atomic(
+        &state_file("network-settings.json")?,
+        &serde_json::to_vec(&settings)?,
+    ) {
+        Ok(()) => {
+            *current = settings;
+            let payload = json!({"interface": current.interface});
+            drop(current);
+            json_response(request, 200, payload, false)
+        }
+        Err(_) => json_response(request, 500, json!({"error":"无法保存网卡选择"}), false),
+    }
+}
+
+#[derive(Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+struct ExitSettings {
+    close_windows: bool,
+}
+
+impl Default for ExitSettings {
+    fn default() -> Self {
+        Self {
+            close_windows: true,
+        }
+    }
+}
+
+fn exit_settings() -> io::Result<ExitSettings> {
+    match fs::read(state_file("exit-settings.json")?) {
+        Ok(body) => Ok(serde_json::from_slice(&body)?),
+        Err(error) if error.kind() == io::ErrorKind::NotFound => Ok(ExitSettings::default()),
+        Err(error) => Err(error),
+    }
+}
+
+pub fn close_windows_on_exit() -> bool {
+    match exit_settings() {
+        Ok(settings) => settings.close_windows,
+        Err(error) => {
+            crate::collector_log::record(&format!("could not read exit settings: {error}"));
+            ExitSettings::default().close_windows
+        }
+    }
+}
+
+pub(crate) fn handle_exit(mut request: Request) -> io::Result<()> {
+    let origin = header(&request, "Origin");
+    let result = match *request.method() {
+        Method::Get if origin.is_none() || origin.as_deref() == Some(SAME_ORIGIN) => {
+            exit_settings()
+        }
+        Method::Post
+            if origin.as_deref() == Some(SAME_ORIGIN)
+                && header(&request, "Content-Type").as_deref() == Some("application/json") =>
+        {
+            let Some(settings) = read_body::<ExitSettings>(&mut request, 64) else {
+                return json_response(request, 400, json!({"error":"退出设置无效"}), false);
+            };
+            write_atomic(
+                &state_file("exit-settings.json")?,
+                &serde_json::to_vec(&settings)?,
+            )
+            .map(|()| settings)
+        }
+        _ => return request.respond(Response::empty(403)),
+    };
+    match result {
+        Ok(settings) => json_response(request, 200, json!(settings), false),
+        Err(error) => json_response(request, 500, json!({"error":error.to_string()}), false),
+    }
+}
 
 #[derive(Default, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
