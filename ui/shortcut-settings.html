@@ -7,49 +7,62 @@
 <style>
 :root {
   color-scheme: light dark;
-  font: 13px/1.5 Inter, system-ui, "Microsoft YaHei UI", sans-serif;
-  color: #202126;
-  background: #edeef2;
-  --muted: #62636c;
-  --line: #dedee4;
-  --accent: #0864db;
-  --accent-hover: #0956bd;
-  --surface: #fff;
-  --sidebar: #f2f2f6;
-  --toolbar: #fafafd;
-  --group: #f7f7fa;
-  --hover: #e8e9ef;
-  --good-text: #226443;
-  --good-bg: #e5f3eb;
+  font: 13px/1.55 "Segoe UI", "Microsoft YaHei UI", sans-serif;
+  color: #212328;
+  background: #c7c7ca;
+  --wallpaper: radial-gradient(ellipse at 8% 4%, #f9f9f9 0%, transparent 53%),
+    radial-gradient(ellipse at 92% 86%, #f2f2f4 0%, transparent 48%),
+    linear-gradient(145deg, #d8d8da, #a2a3a8 58%, #d1d1d3);
+  --muted: #505258;
+  --line: #24262b22;
+  --rim: #ffffffa0;
+  --accent: #41434a;
+  --accent-hover: #31333a;
+  --accent-ink: #fff;
+  --accent-soft: #282a3320;
+  --accent-text: #25272e;
+  --surface: #e9e9ec;
+  --control: #ffffff68;
+  --sidebar: #f2f2f45c;
+  --canvas: #f4f4f53c;
+  --group: linear-gradient(152deg, #ffffff6e, #ffffff36 64%, #ffffff46);
+  --hover: #26283214;
+  --meter-fill: linear-gradient(90deg, #4a4c55, #858892);
+  --good-text: #156442;
+  --good-bg: #e3f5eb;
+  --warning-text: #795218;
+  --warning-bg: #fff3d9;
+  --shadow: inset 0 1px 0 var(--rim), 0 4px 16px #25253012;
 }
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
-body { margin: 0; padding: clamp(18px, 6vw, 76px) 20px; }
-.shell { display: grid; grid-template-columns: 180px minmax(0, 1fr); width: min(100%, 850px); min-height: min(570px, calc(100vh - 40px)); margin: auto; border: 1px solid var(--line); border-radius: 13px; overflow: hidden; background: var(--surface); box-shadow: 0 20px 55px #1617281a, 0 3px 10px #1617280a; }
-.sidebar { background: var(--sidebar); border-right: 1px solid var(--line); padding: 0 10px 16px; }
-.brand { display: flex; align-items: center; min-height: 49px; margin: 0 9px 9px; color: inherit; font-weight: 650; }
-nav { display: grid; gap: 3px; }
-nav a { display: flex; align-items: center; gap: 9px; min-height: 32px; color: inherit; padding: 5px 9px; border-radius: 5px; text-decoration: none; }
+body { margin: 0; min-height: 100vh; padding: clamp(18px, 6vw, 76px) 20px; background: var(--wallpaper) fixed; }
+.shell { display: grid; grid-template-columns: 185px minmax(0, 1fr); width: min(100%, 920px); min-height: min(590px, calc(100vh - 40px)); margin: auto; border: 1px solid var(--rim); border-radius: 22px; overflow: hidden; background: var(--canvas); box-shadow: 0 24px 64px #1515193d; }
+.sidebar { background: var(--sidebar); border-right: 1px solid var(--line); padding: 20px 12px; backdrop-filter: blur(20px); }
+.brand { display: flex; align-items: center; gap: 10px; margin: 0 5px 24px; color: inherit; font-size: 14px; font-weight: 700; white-space: nowrap; }
+.brand-mark { display: grid; place-items: center; flex: 0 0 29px; height: 29px; border: 1px solid var(--rim); border-radius: 8px; color: var(--accent-ink); background: var(--accent); box-shadow: var(--shadow); font-size: 19px; }
+nav { display: grid; gap: 4px; }
+nav a { display: flex; align-items: center; gap: 8px; min-height: 40px; color: var(--muted); padding: 5px 9px; border-radius: 8px; text-decoration: none; font-weight: 600; }
 nav a:hover { background: var(--hover); }
-nav a[aria-current="page"] { color: #fff; background: var(--accent); }
-.nav-icon { display: inline-grid; width: 18px; text-align: center; font-size: 17px; line-height: 1; }
+nav a[aria-current="page"] { color: var(--accent-text); background: var(--accent-soft); box-shadow: inset 0 0 0 1px var(--rim); }
+.nav-icon { display: grid; place-items: center; flex: 0 0 22px; height: 22px; font: 17px/1 "Segoe UI Symbol", sans-serif; }
 main { min-width: 0; }
 h1, h2, p { margin: 0; }
-h1 { font-size: 15px; font-weight: 650; }
-h2 { font-size: 13px; font-weight: 650; }
+h1 { font-size: 25px; font-weight: 700; line-height: 1.2; }
+h2 { font-size: 14px; font-weight: 650; }
 p, .count { color: var(--muted); }
-.page-heading { display: flex; align-items: center; min-height: 49px; padding: 7px 21px; border-bottom: 1px solid var(--line); background: var(--toolbar); }
-.panel-body { padding: 19px 21px 24px; }
+.page-heading { display: flex; align-items: center; min-height: 68px; padding: 15px 24px; border-bottom: 1px solid var(--line); background: var(--sidebar); backdrop-filter: blur(22px); }
+.panel-body { padding: 20px 24px 24px; }
 .section-heading, .toolbar, .actions { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
 .section-heading { justify-content: space-between; }
-.card { background: var(--group); border: 1px solid var(--line); border-radius: 8px; padding: 13px 14px; }
+.card { background: var(--group); border: 1px solid var(--line); border-radius: 15px; padding: 14px 16px; box-shadow: var(--shadow); }
 .card + .card { margin-top: 14px; }
 .toolbar > input { flex: 1; min-width: 0; }
-button, select, input:not([type="radio"]) { min-height: 29px; font: inherit; color: inherit; border: 1px solid var(--line); background: var(--surface); padding: 4px 9px; border-radius: 5px; }
+button, select, input:not([type="radio"], [type="checkbox"]) { min-height: 34px; font: inherit; color: inherit; border: 1px solid var(--line); background: var(--control); padding: 5px 11px; border-radius: 8px; }
 button { cursor: pointer; box-shadow: 0 1px 1px #15162114; }
 button:disabled { opacity: .45; cursor: default; }
-button:hover:not(:disabled) { background: var(--hover); }
-button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+button:hover:not(:disabled) { background: var(--accent-soft); }
+button.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
 button.primary:hover:not(:disabled) { background: var(--accent-hover); }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 fieldset { display: inline-flex; gap: 2px; position: relative; border: 0; border-radius: 6px; background: var(--hover); margin: 11px 0; padding: 2px; }
@@ -59,31 +72,50 @@ fieldset label:has(:checked) span { background: var(--surface); box-shadow: 0 1p
 input[type="radio"] { position: absolute; width: 1px; height: 1px; opacity: 0; }
 input[type="radio"]:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 1px; }
 input:disabled { opacity: .54; }
+.setting-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.setting-row p { margin-top: 3px; }
+#startup-enabled { appearance: none; display: block; flex: 0 0 39px; width: 39px; height: 23px; margin: 0; padding: 3px; border: 0; border-radius: 999px; background: var(--muted); cursor: pointer; }
+#startup-enabled::before { content: ""; display: block; width: 17px; height: 17px; border-radius: 50%; background: white; }
+#startup-enabled:checked { background: var(--accent); }
+#startup-enabled:checked::before { transform: translateX(16px); }
+#startup-enabled:disabled { cursor: default; }
+.weather-mode { min-width: 0; margin: 0; }
+#weather-form .toolbar { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line); }
 #weather-result, #weather-status { margin-top: 12px; }
 #weather-result { padding-top: 9px; border-top: 1px solid var(--line); overflow-wrap: anywhere; }
-#collection-status { color: var(--muted); }
-#sources { padding: 0 16px; }
-.backend + .backend { border-top: 1px solid var(--line); }
-.backend summary { cursor: pointer; padding: 9px 0; }
-.backend summary::marker { color: var(--muted); }
-.backend p { margin: 0 0 8px; overflow-wrap: anywhere; }
-.badge { display: inline-block; margin-left: 8px; font-size: 11px; padding: 1px 7px; color: var(--muted); border-radius: 20px; background: var(--hover); }
-.badge[data-state=available] { color: var(--good-text); background: var(--good-bg); }
+#collection-status { display: inline-flex; align-items: center; gap: 6px; padding: 4px 9px; border-radius: 999px; color: var(--muted); background: var(--hover); font-size: 12px; font-weight: 600; }
+#collection-status::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+#collection-status[data-state="connected"] { color: var(--good-text); background: var(--good-bg); }
+#collection-status[data-state="error"] { color: var(--warning-text); background: var(--warning-bg); }
+.collection-notice { margin-bottom: 12px; padding: 8px 12px; border-radius: 8px; color: var(--warning-text); background: var(--warning-bg); }
 .readings { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 16px; margin: 5px 0 14px; }
 .readings dt { color: var(--muted); overflow-wrap: anywhere; }
 .readings dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; }
 .rows { margin-top: 14px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
 .rows .card { margin: 0; }
 .rows p, #status { margin-top: 10px; }
-.overview { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; }
-.metric-card { min-width: 0; margin: 0 !important; }
-.metric-value { display: block; margin: 4px 0; font-size: 23px; line-height: 1.25; font-weight: 650; font-variant-numeric: tabular-nums; }
+.overview { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 12px; }
+.overview > .metric-card { min-width: 0; margin: 0; backdrop-filter: blur(16px); }
+.metric-group { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 12px; }
+.metric-group > .card { margin: 0; }
+.metric-group > .card:last-child { grid-column: 1 / -1; }
+.metric-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 6px; }
+.metric-value { display: block; font-size: 22px; line-height: 1.2; font-weight: 680; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .metric-value:empty { display: none; }
-.metric-label { color: var(--muted); overflow-wrap: anywhere; }
-.metric-list { margin: 7px 0 0; }
+.metric-label { margin-top: 4px; color: var(--muted); font-size: 12px; overflow-wrap: anywhere; }
+.metric-label:empty { display: none; }
+.overview .metric-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.usage-meter { display: block; width: 100%; height: 6px; margin: 10px 0 2px; appearance: none; }
+.meter-placeholder { border-radius: 6px; background: var(--hover); }
+.usage-meter::-webkit-meter-bar { border: 0; border-radius: 6px; background: var(--hover); }
+.usage-meter::-webkit-meter-optimum-value { border-radius: 6px; background: var(--meter-fill); }
+.metric-list { margin: 9px 0 0; padding-top: 8px; border-top: 1px solid var(--line); }
 .metric-list dd { white-space: nowrap; }
-.diagnostics { margin-top: 12px; }
-.diagnostics > summary { cursor: pointer; padding: 9px 0; font-weight: 650; }
+.disk-usage { margin-top: 9px; padding-top: 8px; border-top: 1px solid var(--line); }
+.disk-usage h3 { margin: 0; color: var(--muted); font-size: 12px; font-weight: 600; }
+.disk-usage ul { display: flex; flex-wrap: wrap; gap: 4px; margin: 4px 0 0; padding: 0; list-style: none; }
+.disk-usage li { padding: 2px 5px; border: 0; border-radius: 5px; background: var(--hover); font-size: 11px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.disk-usage p { margin-top: 4px; font-size: 12px; }
 .shortcut-lanes { margin-top: 0; }
 .shortcut-lanes ol { margin-top: 9px; }
 .shortcut-lanes ol { padding: 0; list-style: none; }
@@ -97,7 +129,12 @@ input:disabled { opacity: .54; }
 .entry-menu .actions { position: absolute; right: 0; top: 100%; display: grid; gap: 1px; min-width: 128px; max-height: 140px; overflow: auto; z-index: 2; padding: 4px; border: 1px solid var(--line); border-radius: 7px; background: var(--surface); box-shadow: 0 5px 18px #0003; }
 .entry-menu .actions button { padding: 4px 8px; border: 0; text-align: left; box-shadow: none; }
 .shortcut-lanes ol:empty { display: none; }
-.lane-empty { display: grid; place-content: center; min-height: 84px; text-align: center; }
+.lane-empty { display: grid; place-content: center; min-height: 62px; margin-top: 10px; border-radius: 8px; background: var(--canvas); text-align: center; }
+.recent-apps { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line); }
+.recent-apps p { margin-top: 6px; }
+.recent-apps ul { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 0; padding: 0; list-style: none; }
+.recent-apps li { max-width: 100%; padding: 3px 8px; border: 1px solid var(--line); border-radius: 7px; background: var(--control); overflow-wrap: anywhere; }
+.picker-count { margin-top: 9px; font-size: 12px; }
 .lane-empty p { margin: 0; }
 dialog { width: min(520px, calc(100% - 28px)); max-height: calc(100% - 26px); padding: 0; color: inherit; background: var(--surface); border: 1px solid var(--line); border-radius: 11px; box-shadow: 0 15px 45px #0005; }
 dialog::backdrop { background: #0006; }
@@ -111,52 +148,91 @@ li img { width: 30px; height: 30px; vertical-align: middle; margin-right: 6px; b
 li .actions { margin-top: 6px; }
 li button { min-height: 30px; padding: 3px 7px; font-size: 12px; }
 .count { font-size: 12px; font-weight: 400; }
-@media (max-width: 700px) {
-  body { padding: 0; background: var(--surface); }
+@media (max-width: 650px) {
+  body { padding: 0; }
   .shell { grid-template-columns: 1fr; }
   .shell { border: 0; border-radius: 0; box-shadow: none; min-height: 100vh; align-content: start; }
-  .sidebar { padding: 0 14px 9px; border-right: 0; border-bottom: 1px solid var(--line); }
-  .brand { min-height: 39px; margin: 0 0 3px; }
+  .sidebar { padding: 9px 12px; border-right: 0; border-bottom: 1px solid var(--line); }
+  .brand { margin: 0 0 5px; }
   nav { display: flex; flex-wrap: wrap; }
   .page-heading, .panel-body { padding-inline: 14px; }
+  .page-heading { min-height: 58px; }
+  h1 { font-size: 21px; }
   .rows { grid-template-columns: 1fr; }
 }
-@media (max-width: 475px) { .overview { grid-template-columns: 1fr; } }
+@media (max-width: 760px) { .overview { grid-template-columns: repeat(2,minmax(0,1fr)); } }
+@media (max-width: 420px) { .overview, .metric-group { grid-template-columns: 1fr; } }
+@media (max-width: 360px) { .setting-row { flex-wrap: wrap; } }
 @media (prefers-color-scheme: dark) {
-  :root { color: #ececf0; background: #222329; --muted: #b5b5bf; --line: #44454d; --surface: #292a30; --sidebar: #33343b; --toolbar: #303137; --group: #303137; --hover: #41424a; --good-text: #b3e6cb; --good-bg: #2d4e40; }
+  :root {
+    color: #f4f4f5;
+    background: #232427;
+    --wallpaper: radial-gradient(ellipse at 0% 0%, #626367 0%, transparent 57%),
+      radial-gradient(ellipse at 100% 92%, #58595e 0%, transparent 51%),
+      linear-gradient(148deg, #36373a, #1d1e21 59%, #3d3e41);
+    --muted: #d0d0d3;
+    --line: #ffffff27;
+    --rim: #ffffff32;
+    --surface: #38393e;
+    --control: #eeeef21a;
+    --sidebar: #1d1d2170;
+    --canvas: #27272b38;
+    --group: linear-gradient(152deg, #ebebef25, #bfbfc313 62%, #e6e6ea1c);
+    --hover: #ffffff19;
+    --accent: #dbdce0;
+    --accent-hover: #f1f1f3;
+    --accent-ink: #25262a;
+    --accent-soft: #ffffff26;
+    --accent-text: #fff;
+    --meter-fill: linear-gradient(90deg, #858790, #d7d8dd);
+    --good-text: #b9ead2;
+    --good-bg: #2b493fcc;
+    --warning-text: #f3d29b;
+    --warning-bg: #49371f;
+    --shadow: inset 0 1px 0 #ffffff15, 0 7px 18px #0c0c1026;
+  }
 }
-.desktop-window body { padding: 0; background: var(--surface); }
+.desktop-window body { padding: 0; }
 .desktop-window .shell { width: 100%; height: 100vh; min-height: 0; border: 0; border-radius: 0; box-shadow: none; }
 .desktop-window main { overflow: auto; }
 .desktop-window .page-heading { position: sticky; top: 0; z-index: 1; }
-@media (max-width: 700px) {
+@media (max-width: 650px) {
   .desktop-window .shell { grid-template-rows: auto minmax(0, 1fr); align-content: stretch; }
 }
 </style>
 <div class="shell">
-<aside class="sidebar"><p class="brand">壁纸仪表盘</p><nav aria-label="设置导航"><a href="#general"><span class="nav-icon" aria-hidden="true">⚙</span>常规</a><a href="#weather"><span class="nav-icon" aria-hidden="true">☼</span>天气</a><a href="#collection"><span class="nav-icon" aria-hidden="true">≋</span>采集状态</a><a href="#shortcuts"><span class="nav-icon" aria-hidden="true">▦</span>应用和游戏</a></nav></aside>
+<aside class="sidebar">
+  <p class="brand"><span class="brand-mark" aria-hidden="true">▥</span>壁纸仪表盘</p>
+  <nav aria-label="设置导航">
+    <a href="#general"><span class="nav-icon" aria-hidden="true">⚙</span>常规</a>
+    <a href="#weather"><span class="nav-icon" aria-hidden="true">☼</span>天气</a>
+    <a href="#collection"><span class="nav-icon" aria-hidden="true">≋</span>采集状态</a>
+    <a href="#shortcuts"><span class="nav-icon" aria-hidden="true">▦</span>应用和游戏</a>
+  </nav>
+</aside>
 <main>
 <section id="general">
   <header class="page-heading"><h1>常规</h1></header>
-  <div class="panel-body"><div class="card">
-    <label><input id="startup-enabled" type="checkbox" disabled> 登录 Windows 时启动采集器</label>
-    <p id="startup-status" role="status">正在读取自启设置…</p>
+  <div class="panel-body"><div class="card setting-row">
+    <div><h2><label for="startup-enabled">登录 Windows 时启动采集器</label></h2>
+    <p id="startup-status" role="status">正在读取自启设置…</p></div>
+    <input id="startup-enabled" type="checkbox" role="switch" aria-describedby="startup-status" disabled>
   </div></div>
 </section>
 <section id="weather">
   <header class="page-heading"><h1>天气</h1></header>
   <div class="panel-body">
   <form class="card" id="weather-form">
-    <h2>天气城市</h2>
-    <fieldset id="weather-mode" aria-label="天气城市来源" disabled>
+    <div class="setting-row"><h2>城市来源</h2>
+    <fieldset class="weather-mode" id="weather-mode" aria-label="天气城市来源" disabled>
       <label><input type="radio" name="mode" value="auto" id="weather-auto"><span>自动定位</span></label>
       <label><input type="radio" name="mode" value="manual" id="weather-manual"><span>手动城市</span></label>
-    </fieldset>
+    </fieldset></div>
     <div class="toolbar"><label for="city">城市</label><input id="city" maxlength="100" required disabled><button class="primary" id="save-weather" disabled>保存天气</button></div>
     <p id="weather-status" role="status">正在读取天气设置…</p>
   </form>
   <div class="card">
-    <div class="section-heading"><h2>自动定位</h2><button id="test-location" type="button">测试自动定位</button></div>
+    <div class="section-heading"><h2>定位诊断</h2><button id="test-location" type="button">测试自动定位</button></div>
     <p id="weather-result" role="status" hidden></p>
   </div>
   </div>
@@ -164,15 +240,16 @@ li button { min-height: 30px; padding: 3px 7px; font-size: 12px; }
 <section id="collection">
   <header class="page-heading section-heading"><h1>采集状态</h1><span id="collection-status" role="status">正在读取…</span></header>
   <div class="panel-body">
-    <div class="overview" id="overview" aria-label="实时读数"></div>
-    <details class="diagnostics" id="diagnostics"><summary>采集来源与诊断</summary><div class="card" id="sources"></div></details>
+    <p class="collection-notice" id="collection-notice" role="status" hidden></p>
+    <div class="overview" id="overview" role="group" aria-label="实时使用率"></div>
+    <div class="metric-group" id="collection-details" role="group" aria-label="游戏、风扇和设备"></div>
   </div>
 </section>
 <section id="shortcuts">
   <header class="page-heading section-heading"><h1>应用和游戏</h1><button class="primary" id="save" disabled>保存布局</button></header>
   <div class="panel-body">
   <div class="rows shortcut-lanes">
-    <section class="card"><div class="section-heading"><h2>应用栏 <span class="count" id="apps-count"></span></h2><button id="choose-apps" disabled>固定应用</button></div><ol id="apps"></ol><div class="lane-empty" id="apps-empty"><p>没有固定应用</p></div><h2 style="margin-top:10px">最近启动</h2><p id="recent-app-list">暂无记录</p></section>
+    <section class="card"><div class="section-heading"><h2>应用栏 <span class="count" id="apps-count"></span></h2><button id="choose-apps" disabled>固定应用</button></div><ol id="apps"></ol><div class="lane-empty" id="apps-empty"><p>没有固定应用</p></div><div class="recent-apps"><h2 id="recent-app-heading">最近启动</h2><ul id="recent-app-list" aria-labelledby="recent-app-heading" hidden></ul><p id="recent-app-empty">暂无记录</p></div></section>
     <section class="card"><div class="section-heading"><h2>游戏栏 <span class="count" id="games-count"></span></h2><button id="choose-games" disabled>固定游戏</button></div><ol id="games"></ol><div class="lane-empty" id="games-empty"><p>没有固定游戏</p></div><p>空位显示最近玩的 Steam 游戏</p></section>
   </div>
   <p id="status" role="status">正在读取快捷方式…</p>
@@ -182,6 +259,7 @@ li button { min-height: 30px; padding: 3px 7px; font-size: 12px; }
     <div class="panel-body">
       <div class="toolbar"><input id="search" type="search" placeholder="搜索名称" aria-label="搜索快捷方式" autofocus>
       <select id="source" aria-label="快捷方式来源"><option value="">全部来源</option><option>Windows</option><option>Steam</option></select></div>
+      <p class="picker-count" id="picker-count" role="status" hidden></p>
       <div class="picker-results" id="candidates"></div><p id="picker-empty" hidden>没有匹配的快捷方式</p>
     </div>
   </dialog>
@@ -277,7 +355,6 @@ $("test-location").onclick = async () => {
 };
 
 const sourceNames = {windows:"Windows 系统数据",amd_adlx:"AMD 显卡",amd_ryzen_sdk:"AMD 处理器传感器",msi_center:"MSI 主板风扇",nvidia_nvml:"NVIDIA 显卡",presentmon:"游戏 FPS",windows_battery:"Windows USB 外设",bluetooth_devices:"蓝牙外设",hid_battery:"USB HID 外设电量"};
-const stateNames = {available:"正常",permission_denied:"权限不足",unsupported:"不支持",unavailable:"暂无数据"};
 function element(tag, content) {
   const node = document.createElement(tag);
   node.textContent = content;
@@ -289,14 +366,51 @@ function metric(device, id) {
 function metricText(sensor, digits = 0) {
   return sensor ? `${sensor.value.toLocaleString(undefined, {maximumFractionDigits:digits})}${sensor.unit === "%" ? "" : " "}${sensor.unit}`.trim() : "—";
 }
-function overviewCard(title, subtitle, value, rows) {
+function diskUsage(volumes) {
+  const section = element("section", "");
+  section.className = "disk-usage";
+  section.append(element("h3", "磁盘占用"));
+  const list = element("ul", "");
+  for (const volume of volumes.toSorted((a, b) => a.name.localeCompare(b.name))) {
+    const drive = /^[A-Z]:/i.exec(volume.name)?.[0].toUpperCase();
+    const free = metric(volume, "free")?.value;
+    const total = metric(volume, "total")?.value;
+    if (!drive || !(total > 0) || free === undefined) continue;
+    const used = Math.max(0, total - free);
+    const percent = Math.round(used / total * 100);
+    const item = element("li", `${drive} ${percent}%`);
+    const label = volume.volume_label ? `${volume.volume_label} (${drive})` : drive;
+    item.title = `${label} · 已用 ${Math.round(used / 1024 ** 3)} / ${Math.round(total / 1024 ** 3)} GiB`;
+    list.append(item);
+  }
+  section.append(list.childElementCount ? list : element("p", "暂无磁盘读数"));
+  return section;
+}
+function overviewCard(title, subtitle, value, rows, usage) {
   const card = element("section", "");
   card.className = "card metric-card";
   const label = element("p", subtitle);
   label.className = "metric-label";
+  if (usage && subtitle) label.title = subtitle;
   const reading = element("strong", value);
   reading.className = "metric-value";
-  card.append(element("h2", title), reading, label);
+  const heading = element("div", "");
+  heading.className = "metric-heading";
+  heading.append(element("h2", title), reading);
+  card.append(heading, label);
+  if (usage?.unit === "%") {
+    const meter = element("meter", "");
+    meter.className = "usage-meter";
+    meter.max = 100;
+    meter.value = usage.value;
+    meter.setAttribute("aria-label", `${title}使用率`);
+    card.append(meter);
+  } else if (usage === null) {
+    const track = element("div", "");
+    track.className = "usage-meter meter-placeholder";
+    track.setAttribute("aria-hidden", "true");
+    card.append(track);
+  }
   if (rows.length) {
     const list = element("dl", "");
     list.className = "readings metric-list";
@@ -316,7 +430,7 @@ function overviewCard(title, subtitle, value, rows) {
   }
   return card;
 }
-function renderOverview(backends) {
+function renderOverview(backends = []) {
   const source = id => backends.find(item => item.source === id);
   const devices = (id, kind) => {
     const backend = source(id);
@@ -341,82 +455,45 @@ function renderOverview(backends) {
   const connected = [...devices("windows_battery", "gamepad"), ...devices("windows_battery", "peripheral"), ...devices("bluetooth_devices", "peripheral")]
     .filter(device => connections.has(device.connection))
     .map(device => [device.name, ...connections.get(device.connection)]);
-  const headings = [
-    overviewCard("处理器", cpu?.name || "暂无处理器读数", metricText(metric(cpu, "usage")), [["封装温度", metricText(metric(cpuSensors, "temperature"))], ["封装功耗", metricText(metric(cpuSensors, "socket_power"))]]),
-    overviewCard("显卡", gpu?.name || "暂无显卡读数", metricText(metric(gpu, "usage")), [["核心温度", metricText(metric(gpu, "core_temperature"))], ["显存温度", metricText(metric(gpu, "memory_temperature"))]]),
-    overviewCard("游戏 FPS", frame?.name || "等待前台游戏", frame ? metricText(metric(frame, "fps"), 1) : "", frame ? [["1% low", metricText(metric(frame, "fps_1_percent_low"), 1)]] : []),
-    overviewCard("设备 & 电量", batteries.length || connected.length ? "" : "暂无设备读数", "", [...batteries.map(device => [device.name, metricText(metric(device, "charge"))]), ...connected]),
+  const cpuUsage = metric(cpu, "usage");
+  const gpuUsage = metric(gpu, "usage");
+  const memoryUsage = metric(devices("windows", "memory")[0], "usage");
+  const memoryCard = overviewCard("内存", memoryUsage ? "使用率" : "暂无内存读数", metricText(memoryUsage), [], memoryUsage ?? null);
+  memoryCard.append(diskUsage(devices("windows", "volume")));
+  $("overview").replaceChildren(
+    overviewCard("处理器", cpu?.name || "暂无处理器读数", metricText(cpuUsage), [["封装温度", metricText(metric(cpuSensors, "temperature"))], ["封装功耗", metricText(metric(cpuSensors, "socket_power"))]], cpuUsage ?? null),
+    overviewCard("显卡", gpu?.name || "暂无显卡读数", metricText(gpuUsage), [["核心温度", metricText(metric(gpu, "core_temperature"))], ["显存温度", metricText(metric(gpu, "memory_temperature"))]], gpuUsage ?? null),
+    memoryCard,
+  );
+  $("collection-details").replaceChildren(
+    overviewCard("游戏 FPS", frame?.name || (backends.length ? "等待前台游戏" : "暂无游戏帧率"), metricText(metric(frame, "fps"), 1), frame ? [["1% low", metricText(metric(frame, "fps_1_percent_low"), 1)]] : []),
     overviewCard("主板风扇", fans.length ? "" : "暂无风扇读数", "", fans.map(sensor => [sensor.label, metricText(sensor)])),
-    overviewCard("内存", "", metricText(metric(devices("windows", "memory")[0], "usage")), []),
-  ];
-  $("overview").replaceChildren(...headings);
+    overviewCard("设备与电量", batteries.length || connected.length ? "" : "暂无设备读数", "", [...batteries.map(device => [device.name, metricText(metric(device, "charge"))]), ...connected]),
+  );
 }
-function renderDiagnostics(backends) {
-    if (!$("diagnostics").open) return;
-    const focused = document.activeElement.closest(".backend")?.dataset.source;
-    const open = new Set(Array.from($("sources").querySelectorAll("details[open]"), node => node.dataset.source));
-    $("sources").replaceChildren(...backends.map(source => {
-      const item = element("details", "");
-      item.className = "backend";
-      item.dataset.source = source.source;
-      item.open = open.has(source.source);
-      const heading = element("summary", sourceNames[source.source] || source.source);
-      const status = source.sample_duration_ms == null ? "待采样" : source.last_error ? "使用上次读数"
-        : source.source === "presentmon" && source.status !== "available" ? "等待前台游戏"
-        : source.status === "available" && !source.devices.length ? "暂无设备读数" : stateNames[source.status] || source.status;
-      const badge = element("span", status);
-      badge.className = "badge";
-      badge.dataset.state = source.status;
-      heading.append(badge);
-      if (source.source === "presentmon" && source.devices[0]) heading.append(element("span", ` · ${source.devices[0].name}`));
-      item.append(heading);
-      if (source.detail || source.last_error) item.append(element("p", source.last_error?.detail || source.detail));
-      if (source.sample_duration_ms != null) item.append(element("p", `读数时间 ${new Date(source.sampled_at_unix_ms).toLocaleTimeString()} · 耗时 ${source.sample_duration_ms} ms`));
-      for (const device of item.open ? source.devices : []) {
-        item.append(element("strong", device.name));
-        const readings = element("dl", "");
-        readings.className = "readings";
-        for (const sensor of device.sensors) {
-          const value = Number.isFinite(sensor.value) ? `${sensor.value.toLocaleString(undefined,{maximumFractionDigits:2})} ${sensor.unit}`.trim() : stateNames[sensor.status] || sensor.status;
-          const row = element("dd", value);
-          if (sensor.detail) row.title = sensor.detail;
-          readings.append(element("dt", sensor.label), row);
-        }
-        item.append(readings);
-      }
-      return item;
-    }));
-    if (focused) Array.from($("sources").children).find(item => item.dataset.source === focused)?.querySelector("summary").focus({preventScroll:true});
+function updateCollectionStatus(state, text, notice = "") {
+  const status = $("collection-status");
+  const message = $("collection-notice");
+  status.dataset.state = state;
+  if (status.textContent !== text) status.textContent = text;
+  message.hidden = !notice;
+  if (message.textContent !== notice) message.textContent = notice;
 }
-let collectionData;
-$("diagnostics").addEventListener("toggle", () => {
-  if (collectionData) renderDiagnostics(collectionData);
-});
-$("sources").addEventListener("click", event => {
-  if (event.target.closest("summary")) {
-    // The native details toggle runs after the click handler.
-    const detail = event.target.closest("details");
-    detail.addEventListener("toggle", () => {
-      if (detail.open && collectionData) renderDiagnostics(collectionData);
-    }, {once:true});
-  }
-});
 async function refreshCollection() {
   try {
     if ($("collection").hidden || document.hidden) return;
     const snapshot = await jsonRequest("/snapshots");
-    collectionData = snapshot.backends;
-    renderOverview(collectionData);
-    renderDiagnostics(collectionData);
-    $("collection-status").textContent = "已连接";
+    renderOverview(snapshot.backends);
+    const denied = snapshot.backends.filter(source => source.status === "permission_denied");
+    const names = denied.map(source => sourceNames[source.source] || source.source).join("、");
+    updateCollectionStatus("connected", "已连接", names ? `${names}权限不足，请以管理员身份启动托盘采集器。` : "");
   } catch {
-    $("collection-status").textContent = "暂时无法读取采集状态";
-    collectionData = undefined;
-    $("overview").replaceChildren();
-    $("sources").replaceChildren();
+    if ($("collection-status").dataset.state !== "error") renderOverview();
+    updateCollectionStatus("error", "采集器未连接");
   }
   finally { setTimeout(refreshCollection, 1000); }
 }
+renderOverview();
 refreshCollection();
 
 const limits = { apps: 11, games: 7 };
@@ -431,16 +508,26 @@ let dirty = false;
 function showRecentApps(ids) {
   const pinned = new Set(layout.apps.map(item => item.id));
   const names = ids.filter(id => !pinned.has(id)).map(id => catalog.get(id)?.name).filter(Boolean);
-  $("recent-app-list").textContent = names.join("、") || "暂无可补位的应用";
+  const list = $("recent-app-list");
+  const empty = $("recent-app-empty");
+  list.replaceChildren(...names.map(name => element("li", name)));
+  list.hidden = names.length === 0;
+  empty.hidden = names.length > 0;
+  empty.textContent = "暂无可补位的应用";
 }
 async function refreshRecentApps() {
   try {
     if (loaded && !$("shortcuts").hidden && !document.hidden) showRecentApps(await jsonRequest("/shortcuts/recent-apps"));
-  } catch { $("recent-app-list").textContent = "暂时无法读取最近应用"; }
+  } catch {
+    if ($("recent-app-list").hidden) $("recent-app-empty").textContent = "暂时无法读取最近应用";
+  }
   finally { setTimeout(refreshRecentApps, 3000); }
 }
 refreshRecentApps();
-const status = value => { $("status").textContent = value; };
+const status = value => {
+  $("status").textContent = value;
+  $("status").hidden = !value;
+};
 function renderCatalog() {
   const query = $("search").value.trim().toLocaleLowerCase();
   const source = $("source").value;
@@ -456,6 +543,8 @@ function renderCatalog() {
     return row;
   }));
   $("picker-empty").hidden = choices.length > 0;
+  $("picker-count").hidden = choices.length === 0;
+  $("picker-count").textContent = choices.length ? `${choices.length} 个可添加的快捷方式` : "";
   $("candidates").scrollTop = 0;
 }
 function openPicker(row) {
@@ -585,6 +674,7 @@ $("icon").onchange = async () => {
 $("save").onclick = async () => {
   if (!loaded || saving) return;
   saving = true;
+  status("正在保存布局…");
   renderRows();
   try {
     const filtered = Object.fromEntries(Object.keys(limits).map(row => [row, layout[row].filter(entry => catalog.has(entry.id))]));
@@ -606,7 +696,7 @@ fetch("/shortcuts/catalog").then(async response => {
   loaded = true;
   renderRows();
   showRecentApps(result.recent_apps ?? []);
-  status("可选择 " + entries.length + " 个快捷方式");
+  status("");
 }).catch(error => status("读取失败：" + error.message));
 </script>
 </html>
