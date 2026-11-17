@@ -15,6 +15,7 @@ mod settings;
 mod shortcut_http;
 pub mod shortcuts;
 pub mod telemetry;
+pub mod updates;
 mod weather_location;
 pub mod windows;
 mod windows_gpu;

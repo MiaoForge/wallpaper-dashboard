@@ -1,6 +1,7 @@
 use std::{env, path::PathBuf};
 
 fn main() {
+    println!("cargo:rerun-if-env-changed=WALLPAPER_DASHBOARD_RELEASE_TAG");
     println!("cargo:rerun-if-changed=dashboard.manifest");
     if env::var("CARGO_CFG_TARGET_ENV").as_deref() == Ok("msvc") {
         let manifest =

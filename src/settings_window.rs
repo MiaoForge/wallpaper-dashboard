@@ -13,12 +13,19 @@ use tao::{
     platform::{run_return::EventLoopExtRunReturn, windows::WindowBuilderExtWindows},
     window::WindowBuilder,
 };
-use windows_sys::Win32::{
-    Foundation::{ERROR_ALREADY_EXISTS, GetLastError},
-    System::Threading::CreateMutexW,
-    UI::WindowsAndMessaging::{
-        FindWindowW, IsIconic, SW_RESTORE, SetForegroundWindow, ShowWindowAsync,
+use windows_sys::{
+    Win32::{
+        Foundation::{ERROR_ALREADY_EXISTS, GetLastError},
+        System::Threading::CreateMutexW,
+        UI::{
+            Shell::ShellExecuteW,
+            WindowsAndMessaging::{
+                FindWindowW, IsIconic, SW_RESTORE, SW_SHOWNORMAL, SetForegroundWindow,
+                ShowWindowAsync,
+            },
+        },
     },
+    w,
 };
 use wry::{NewWindowResponse, WebContext, WebViewBuilder, WebViewBuilderExtWindows};
 
@@ -89,7 +96,23 @@ pub(super) fn run() -> Result<(), super::Error> {
         .with_url(SETTINGS_URL)
         .with_initialization_script("window.wallpaperDashboardDesktop = true")
         .with_navigation_handler(|url| url.split('#').next() == Some(SETTINGS_URL))
-        .with_new_window_req_handler(|_, _| NewWindowResponse::Deny)
+        .with_new_window_req_handler(|url, _| {
+            if sensor_probe::updates::is_release_page(&url) {
+                let url: Vec<_> = url.encode_utf16().chain([0]).collect();
+                // SAFETY: the allowed release URL is NUL-terminated and retained for the call.
+                unsafe {
+                    ShellExecuteW(
+                        ptr::null_mut(),
+                        w!("open"),
+                        url.as_ptr(),
+                        ptr::null(),
+                        ptr::null(),
+                        SW_SHOWNORMAL,
+                    );
+                }
+            }
+            NewWindowResponse::Deny
+        })
         .with_default_context_menus(false)
         .with_browser_accelerator_keys(false)
         .build(&window)

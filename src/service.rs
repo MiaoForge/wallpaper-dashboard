@@ -287,6 +287,9 @@ fn respond(
     if request.url() == "/settings/startup" {
         return crate::settings::handle_startup(request);
     }
+    if request.url() == "/settings/update" {
+        return crate::updates::handle(request);
+    }
     if matches!(
         request.url(),
         "/weather-location" | "/settings/weather/test"

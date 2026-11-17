@@ -74,6 +74,11 @@ input[type="radio"]:focus-visible + span { outline: 2px solid var(--accent); out
 input:disabled { opacity: .54; }
 .setting-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
 .setting-row p { margin-top: 3px; }
+.update-actions { justify-content: flex-end; }
+.update-download { display: inline-flex; align-items: center; min-height: 34px; padding: 5px 11px; border-radius: 8px; color: var(--accent-ink); background: var(--accent); text-decoration: none; white-space: nowrap; }
+.update-download:hover { background: var(--accent-hover); }
+#update-status { margin-top: 8px; }
+@media (max-width: 480px) { .update-row { flex-wrap: wrap; } .update-actions { justify-content: flex-start; } }
 #startup-enabled { appearance: none; display: block; flex: 0 0 39px; width: 39px; height: 23px; margin: 0; padding: 3px; border: 0; border-radius: 999px; background: var(--muted); cursor: pointer; }
 #startup-enabled::before { content: ""; display: block; width: 17px; height: 17px; border-radius: 50%; background: white; }
 #startup-enabled:checked { background: var(--accent); }
@@ -217,7 +222,18 @@ li button { min-height: 30px; padding: 3px 7px; font-size: 12px; }
     <div><h2><label for="startup-enabled">登录 Windows 时启动采集器</label></h2>
     <p id="startup-status" role="status">正在读取自启设置…</p></div>
     <input id="startup-enabled" type="checkbox" role="switch" aria-describedby="startup-status" disabled>
-  </div></div>
+  </div>
+  <section class="card">
+    <div class="setting-row update-row">
+      <div><h2>版本与更新</h2><p id="current-version">正在读取版本…</p></div>
+      <div class="actions update-actions">
+        <button id="check-update" type="button">检查更新</button>
+        <a class="update-download" id="download-update" target="_blank" rel="noopener noreferrer" hidden>下载更新</a>
+      </div>
+    </div>
+    <p id="update-status" role="status" hidden></p>
+  </section>
+  </div>
 </section>
 <section id="weather">
   <header class="page-heading"><h1>天气</h1></header>
@@ -289,6 +305,37 @@ async function jsonRequest(path, options) {
   if (!response.ok || !body) throw new Error(body?.error || `请求失败（${response.status}）`);
   return body;
 }
+
+const showCurrentVersion = ({version, development}) => {
+  $("current-version").textContent = `当前版本 ${version}${development ? "（开发构建）" : ""}`;
+};
+jsonRequest("/settings/update").then(showCurrentVersion).catch(() => {
+  $("current-version").textContent = "暂时无法读取当前版本";
+});
+$("check-update").onclick = async () => {
+  const button = $("check-update");
+  const status = $("update-status");
+  const download = $("download-update");
+  button.disabled = true;
+  download.hidden = true;
+  download.removeAttribute("href");
+  status.hidden = false;
+  status.textContent = "正在检查更新…";
+  try {
+    const result = await jsonRequest("/settings/update", {method:"POST"});
+    if (result.state === "available") {
+      download.href = result.url;
+      download.hidden = false;
+      status.textContent = `发现新版本 ${result.version}`;
+    } else {
+      status.textContent = result.state === "up_to_date" ? "已是最新版本" : "当前渠道暂无发布";
+    }
+  } catch {
+    status.textContent = "暂时无法检查更新，请重试";
+  } finally {
+    button.disabled = false;
+  }
+};
 
 const showStartup = enabled => {
   $("startup-enabled").checked = enabled;

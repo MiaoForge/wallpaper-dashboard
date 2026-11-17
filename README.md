@@ -28,3 +28,5 @@ Pushing `vX.Y.Z` publishes a GitHub Release using `release-note-vX.Y.Z.md`.
 Pushing `vX.Y.Z-rcX` publishes a prerelease using
 `release-note-vX.Y.Z-rcX.md`. Each release includes a Windows x64 ZIP with
 `wallpaper-dashboard.exe`.
+The **常规** settings page shows the installed version and can check GitHub
+for an update. Release builds display their full tag, including any RC suffix.

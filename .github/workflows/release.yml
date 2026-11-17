@@ -44,6 +44,8 @@ jobs:
       - name: Run tests
         run: cargo test --locked --all-targets
       - name: Build the release executable
+        env:
+          WALLPAPER_DASHBOARD_RELEASE_TAG: ${{ github.ref_name }}
         run: cargo build --release --locked --bin wallpaper-dashboard
       - name: Package the executable
         run: |
